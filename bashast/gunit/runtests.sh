@@ -1,7 +1,10 @@
 #!/bin/bash
 #first, set up the classpath
-OLDCP=$CLASSPATH
-export CLASSPATH=".:/usr/share/java/antlr-3.2.jar:/Users/squishy/ANTLR/antlr.jar"
+if type -p java-config > /dev/null; then
+	export CLASSPATH=".:$(java-config -dp antlr-3)"
+else
+	export CLASSPATH=".:/usr/share/java/antlr-3.2.jar:/Users/squishy/ANTLR/antlr.jar"
+fi
 let failedtests=0
 for gtest in `ls |grep gunit`; do
 	grammar=`cat $gtest |grep gunit|awk '{print $2}'|awk -F';' '{print $1}'`
