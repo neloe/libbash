@@ -1,0 +1,18 @@
+gunit bashast_param;
+
+param_exp:
+"$asdf" -> "asdf"
+"${asdf}" -> "asdf"
+"${asdf:-foo}" -> (:- asdf foo)
+"${bar:7}" -> (OFFSET bar 7)
+"${foo:5:2}" -> (OFFSET foo 5 2)
+"${!asdf*}" -> (! asdf *)
+"${!asdf@}" -> (! asdf @)
+"${!asdf[*]}" -> (! asdf [ * ])
+"${!asdf[@]}" -> (! asdf [ @ ])
+"${#foo}" -> (# foo)
+"${foo#bar}" -> (# foo bar)
+"${foo##bar}" -> (## foo bar)
+"${foo%bar}" -> (% foo bar)
+"${foo%%bar}" -> (%% foo bar)
+"${this/is/pattern}"->(/ this is pattern)
