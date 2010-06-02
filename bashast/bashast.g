@@ -24,5 +24,40 @@ options
 	ASTLabelType	= CommonTree;
 }
 
+pipeline
+	:	('time' ('-p')?)?('!')?simple_command ('|' simple_command)*;
+simple_command	:	;
+redirect:	BLANK!?HSOP^BLANK!? FILEPATH
+	|	BLANK!?HDOP^BLANK!? FILEPATH EOL! heredoc
+	|	BLANK!?REDIR_OP^BLANK!? DIGIT CLOSE_FD?
+	|	BLANK!?REDIR_OP^BLANK!? redir_dest;
+
+heredoc	:	(FILEPATH EOL!)*;
+
+redir_dest
+	:	FILEPATH //path to a file
+	|	FDASFILE; //handles file descriptors0
+
 //reserved words.
 RES_WORD:	('!'|'case'|'do'|'done'|'elif'|'else'|'esac'|'fi'|'for'|'function'|'if'|'in'|'select'|'then'|'until'|'while'|'{'|'}'|'time'|'[['|']]');
+
+//Because bash isn't exactly whitespace dependent... need to explicitly handle blanks
+BLANK	:	(' '|'\t')+;
+EOL	:	('\r'?'\n') ;
+//some fragments for creating words...
+fragment
+ALPHANUM:	(DIGIT|LETTER);
+fragment
+DIGIT	:	'0'..'9';
+fragment
+LETTER	:	('a'..'z'|'A'..'Z');
+//Some special redirect tokens
+HSOP	:	'<<<';
+HDOP	:	'<<''-'?;
+REDIR_OP:	DIGIT?('&'?('>''>'?|'<')|'>&'|'<&'|'<>');
+CLOSE_FD:	'-';
+fragment
+FILENAME:	'"'(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|' '|'-'|'_')*'"'
+	|	(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|'-'|'_')*;
+FDASFILE:	'&'DIGIT'-'?;
+FILEPATH:	'/'?FILENAME('/'FILENAME)*;

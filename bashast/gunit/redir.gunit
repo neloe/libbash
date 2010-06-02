@@ -1,0 +1,37 @@
+/**
+Copyright 2010 Nathan Eloe
+
+This file is part of libbash.
+
+libbash is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+libbash is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with libbash.  If not, see <http://www.gnu.org/licenses/>.
+**/
+gunit bashast;
+
+redirect:
+">output_file" -> (> output_file)
+"1>output.file" -> (1> output.file)
+"2>&1" -> (2>& 1)
+">> /this/is/append" -> (>> /this/is/append)
+"&> allout" -> (&> allout)
+"< this.is.1input" -> (< this.is.1input)
+"3< \"input from file\"" -> (3< "input from file")
+"2<&0" -> (2<& 0)
+"<< asdf
+asdf
+" -> (<< asdf asdf)
+"<<< herestring" -> (<<< herestring)
+"<< blue
+red
+green
+" -> (<< blue red green)
