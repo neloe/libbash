@@ -1,0 +1,6 @@
+gunit bashast;
+
+command:
+"./hello#comment" -> "./hello"
+"#comment
+./hello" -> "./hello"

@@ -34,11 +34,13 @@ redirect:	BLANK!?HSOP^BLANK!? FILEPATH
 	|	BLANK!?REDIR_OP^BLANK!? redir_dest;
 
 heredoc	:	(FILEPATH EOL!)*;
-
 redir_dest
 	:	FILEPATH //path to a file
 	|	FDASFILE; //handles file descriptors0
 
+COMMENT
+    :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
+    ;
 //reserved words.
 RES_WORD:	('!'|'case'|'do'|'done'|'elif'|'else'|'esac'|'fi'|'for'|'function'|'if'|'in'|'select'|'then'|'until'|'while'|'{'|'}'|'time'|'[['|']]');
 
