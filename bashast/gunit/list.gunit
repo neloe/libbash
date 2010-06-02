@@ -1,0 +1,7 @@
+gunit bashast;
+
+list:
+"make" -> "make"
+"make && make modules_install;" -> (&& make (make modules_install))
+"make && make modules_install &" -> (& (&& make (make modules_install)))
+"cd /usr/bin; ls -al |grep more&& cp ./less ./more" -> (; (cd /usr/bin) (&& (| (ls -al) (grep more)) (cp ./less ./more)))

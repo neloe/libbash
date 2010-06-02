@@ -23,7 +23,11 @@ options
 	language	= Java;
 	ASTLabelType	= CommonTree;
 }
-
+list	:	list_level_2 (';'!|'&'^|EOL!)?;
+list_level_1
+	:	pipeline (BLANK!?('&&'^|'||'^)BLANK!? pipeline)*;
+list_level_2
+	:	list_level_1 BLANK!?((';'^|'&'^)BLANK!? list_level_1 BLANK!?)*;
 pipeline
 	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)?simple_command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
 simple_command	:	(VAR_DEF BLANK!)* command^ redirect*;
