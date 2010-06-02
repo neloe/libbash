@@ -26,7 +26,8 @@ options
 
 pipeline
 	:	('time' ('-p')?)?('!')?simple_command ('|' simple_command)*;
-simple_command	:	;
+simple_command	:	(VAR_DEF BLANK!)* command^ redirect*;
+command	:	FILEPATH^ (BLANK! FILEPATH)*;
 redirect:	BLANK!?HSOP^BLANK!? FILEPATH
 	|	BLANK!?HDOP^BLANK!? FILEPATH EOL! heredoc
 	|	BLANK!?REDIR_OP^BLANK!? DIGIT CLOSE_FD?
@@ -61,3 +62,5 @@ FILENAME:	'"'(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|' '|'-'|'_')*'"'
 	|	(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|'-'|'_')*;
 FDASFILE:	'&'DIGIT'-'?;
 FILEPATH:	'/'?FILENAME('/'FILENAME)*;
+VAR_DEF	:	(ALPHANUM)+EQUALS FILENAME;
+EQUALS	:	'=';
