@@ -25,7 +25,7 @@ options
 }
 
 pipeline
-	:	('time' ('-p')?)?('!')?simple_command ('|' simple_command)*;
+	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)?simple_command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
 simple_command	:	(VAR_DEF BLANK!)* command^ redirect*;
 command	:	FILEPATH^ (BLANK! FILEPATH)*;
 redirect:	BLANK!?HSOP^BLANK!? FILEPATH
@@ -66,3 +66,4 @@ FDASFILE:	'&'DIGIT'-'?;
 FILEPATH:	'/'?FILENAME('/'FILENAME)*;
 VAR_DEF	:	(ALPHANUM)+EQUALS FILENAME;
 EQUALS	:	'=';
+PIPE	:	'|';
