@@ -1,0 +1,13 @@
+gunit bashast;
+
+brace:
+"{a,b}"-> (BRACE a b)
+"{a,b,c}" -> (BRACE a b c)
+"{a..d}" -> (BRACE a..d)
+"{{a,b},c,d}" -> (BRACE (BRACE a b) c d)
+
+brace_expansion:
+"{a,b}" -> (BRACE_EXP (BRACE a b))
+"a{b,c}" -> (BRACE_EXP a (BRACE b c))
+"{c..d}f" -> (BRACE_EXP (BRACE c..d) f)
+"z{{a,b},c}" -> (BRACE_EXP z (BRACE (BRACE a b) c))

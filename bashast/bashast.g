@@ -23,6 +23,10 @@ options
 	language	= Java;
 	ASTLabelType	= CommonTree;
 }
+tokens{
+	BRACE;
+	BRACE_EXP;
+}
 list	:	list_level_2 (';'!|'&'^|EOL!)?;
 list_level_1
 	:	pipeline (BLANK!?('&&'^|'||'^)BLANK!? pipeline)*;
@@ -41,10 +45,20 @@ heredoc	:	(FILEPATH EOL!)*;
 redir_dest
 	:	FILEPATH //path to a file
 	|	FDASFILE; //handles file descriptors0
+brace_expansion
+	:	pre=FILEPATH? brace post=FILEPATH? -> ^(BRACE_EXP ($pre)? brace ($post)?);
+brace
+	:	LBRACE BLANK? braceexp BLANK?RBRACE -> ^(BRACE braceexp);
+braceexp:	(commasep|RANGE);
+bepart	:	FILEPATH|brace;
+commasep:	bepart(','! bepart)+;
+RANGE	:	ALPHANUM DOTDOT ALPHANUM;
 
 COMMENT
     :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
     ;
+LBRACE	:	'{';
+RBRACE	:	'}';
 //reserved words.
 RES_WORD:	('!'|'case'|'do'|'done'|'elif'|'else'|'esac'|'fi'|'for'|'function'|'if'|'in'|'select'|'then'|'until'|'while'|'{'|'}'|'time'|'[['|']]');
 
@@ -63,6 +77,7 @@ HSOP	:	'<<<';
 HDOP	:	'<<''-'?;
 REDIR_OP:	DIGIT?('&'?('>''>'?|'<')|'>&'|'<&'|'<>');
 CLOSE_FD:	'-';
+DOTDOT	:	'..';
 fragment
 FILENAME:	'"'(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|' '|'-'|'_')*'"'
 	|	(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|'-'|'_')*;
