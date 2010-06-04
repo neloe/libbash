@@ -26,6 +26,7 @@ options
 tokens{
 	BRACE;
 	BRACE_EXP;
+	COMMAND_SUB;
 }
 list	:	list_level_2 (';'!|'&'^|EOL!)?;
 list_level_1
@@ -52,6 +53,9 @@ brace
 braceexp:	(commasep|RANGE);
 bepart	:	FILEPATH|brace;
 commasep:	bepart(','! bepart)+;
+command_sub
+	:	DOLLAR LPAREN BLANK? pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
+	|	TICK BLANK? pipeline BLANK? TICK -> ^(COMMAND_SUB pipeline) ;
 RANGE	:	ALPHANUM DOTDOT ALPHANUM;
 
 COMMENT
@@ -59,6 +63,10 @@ COMMENT
     ;
 LBRACE	:	'{';
 RBRACE	:	'}';
+RPAREN	:	')';
+LPAREN	:	'(';
+TICK	:	'`';
+DOLLAR	:	'$';
 //reserved words.
 RES_WORD:	('!'|'case'|'do'|'done'|'elif'|'else'|'esac'|'fi'|'for'|'function'|'if'|'in'|'select'|'then'|'until'|'while'|'{'|'}'|'time'|'[['|']]');
 
