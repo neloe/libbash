@@ -23,3 +23,6 @@ options
 	language	= Java;
 	ASTLabelType	= CommonTree;
 }
+
+//reserved words.
+RES_WORD:	('!'|'case'|'do'|'done'|'elif'|'else'|'esac'|'fi'|'for'|'function'|'if'|'in'|'select'|'then'|'until'|'while'|'{'|'}'|'time'|'[['|']]');
