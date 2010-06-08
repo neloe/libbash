@@ -1,0 +1,10 @@
+gunit bashast;
+
+arr_var_def:
+"asdf=(a b c d)"->"asdf=(a b c d)"
+
+arr_var_ref:
+"$asdf" -> "asdf"
+"${asdf[3]}" -> (asdf 3)
+"${asdf[4] }" -> (asdf 4)
+"${asdf}" -> "asdf"

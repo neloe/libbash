@@ -132,6 +132,11 @@ pattern	:	command_sub
 
 //TOkens
 RANGE	:	ALPHANUM DOTDOT ALPHANUM;
+arr_var_def
+	:	ARR_VAR_DEF;
+arr_var_ref
+	:	DOLLAR! LBRACE! BLANK!? FILEPATH^ (LSQUARE! ((DIGIT)+|TIMES|AT) RSQUARE!)? BLANK!? RBRACE! 
+	|	DOLLAR!FILEPATH;
 
 COMMENT
     :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
@@ -177,7 +182,6 @@ EOL	:	('\r'?'\n')+ ;
 //some fragments for creating words...
 fragment
 ALPHANUM:	(DIGIT|LETTER);
-fragment
 DIGIT	:	'0'..'9';
 fragment
 LETTER	:	('a'..'z'|'A'..'Z');
@@ -195,3 +199,5 @@ FILEPATH:	'/'?FILENAME('/'FILENAME)*;
 VAR_DEF	:	(ALPHANUM)+EQUALS FILENAME;
 EQUALS	:	'=';
 PIPE	:	'|';
+ARR_VAR_DEF
+	:	(ALPHANUM)+EQUALS LPAREN (BLANK? FILENAME)* BLANK? RPAREN;
