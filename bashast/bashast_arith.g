@@ -31,7 +31,6 @@ tokens
 	POST_INC_DEC;
 	PRE_INC_DEC;
 	UNARY;
-	EXPONENT;
 	TIMES_DIV_MOD;
 	ADD_SUB;
 	BITSHIFT;
@@ -62,7 +61,7 @@ unary	:	primary 	-> ^(UNARY primary)
 	|	post_inc_dec	-> ^(UNARY post_inc_dec)
 	|	pre_inc_dec	-> ^(UNARY pre_inc_dec);
 negation:	NEGATE^?unary;
-exp	:	negation (EXP negation)* 	-> ^(EXPONENT negation (EXP negation)*);
+exp	:	negation (EXP^ negation)* ;
 tdm	:	exp (ltmdexpr)*	-> ^(TIMES_DIV_MOD exp ltmdexpr*);
 ltmdexpr:	(TIMES|DIV|MOD) exp;
 addsub	:	tdm (laddsubexpr)*		-> ^(ADD_SUB tdm laddsubexpr*);
