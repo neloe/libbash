@@ -1,0 +1,109 @@
+gunit bashast;
+
+cond_comp:
+"[[ cond_stub ]]" -> (COMPOUND_COND cond_stub)
+"[[ cond_stub]]" FAIL
+"[[cond_stub ]]" FAIL
+"[[
+cond_stub ]]" -> (COMPOUND_COND cond_stub)
+
+arith_comp:
+"((arith_stub))" -> (COMPOUND_ARITH arith_stub)
+"(( arith_stub ))" -> (COMPOUND_ARITH arith_stub)
+
+currshell:
+"{ time cat; }" -> (CURRSHELL (cat time))
+"{ time cat
+}" -> (CURRSHELL (cat time))
+"{time cat}" FAIL
+"{ time cat }" FAIL
+
+subshell:
+"(time cat)" -> (SUBSHELL (cat time))
+"(time cat )" ->(SUBSHELL (cat time))
+"( time cat)" -> (SUBSHELL (cat time))
+"( time cat;
+)" -> (SUBSHELL (cat time))
+
+case_expr:
+"case `echo asdf` in
+esac" -> (case (COMMAND_SUB (echo asdf)))
+
+"case `echo asdf` in
+gz)
+echo yay
+;;
+bzip)
+echo three
+;;
+*) echo woo
+;;
+esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz (echo yay)) (CASE_PATTERN bzip (echo three)) (CASE_PATTERN * (echo woo)))
+
+"case `echo asdf` in
+	gz)
+		echo yay
+		;;
+	bzip)
+		echo three
+		;;
+	*) echo woo
+esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz (echo yay)) (CASE_PATTERN bzip (echo three)) (CASE_PATTERN * (echo woo)))
+
+"case `echo asdf` in gz|asdf) echo yay ;; bzip) echo three ;; *) echo woo esac" FAIL
+"case `echo asdf` in gz|asdf) echo yay ;; bzip) echo three ;; *) echo woo ;; esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz asdf (echo yay)) (CASE_PATTERN bzip (echo three)) (CASE_PATTERN * (echo woo)))
+
+for_expr:
+"for each in `ls |grep log`; do
+	echo \"file found\"
+done" -> (for each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
+"for each in `ls |grep log`; do echo \"file found\"; done" -> (for each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
+"for each in `ls |grep log`; do echo file done" FAIL
+
+"for ((arith_stub;arith_stub;arith_stub)); do echo yay; done" -> (for (FOR_INIT arith_stub) (FOR_COND arith_stub) (FOR_MOD arith_stub) (echo yay))
+"for ((arith_stub; ;arith_stub)); do echo yay; done" -> (for (FOR_INIT arith_stub) (FOR_MOD arith_stub) (echo yay))
+"for ((;arith_stub ;arith_stub)); do echo yay; done" -> (for (FOR_COND arith_stub) (FOR_MOD arith_stub) (echo yay))
+"for ((arith_stub;;arith_stub)); do echo yay; done" -> (for (FOR_INIT arith_stub) (FOR_MOD arith_stub) (echo yay))
+
+
+sel_expr:
+"select each in `ls |grep log`; do
+  echo \"file found\"
+	done" -> (select each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
+	"select each in `ls |grep log`; do echo \"file found\"; done" -> (select each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
+"select each in `ls |grep log`; do echo file done" FAIL
+
+if_expr:
+"if echo yay2; then
+echo yay
+fi" -> (if (echo yay2) (echo yay))
+"if echo yay2; then echo yay ;fi" -> (if (echo yay2) (echo yay))
+"if echo yay2 then echo yay; fi" FAIL
+
+"if echo yay2; then
+echo yay
+elif echo yay3; then
+echo boo
+fi" -> (if (echo yay2) (echo yay) (if (echo yay3) (echo boo)))
+
+"if echo yay2; then
+echo yay
+elif echo yay3; then
+echo boo
+elif echo yay4; then echo hurrah
+else echo darn
+fi" -> (if (echo yay2) (echo yay) (if (echo yay3) (echo boo)) (if (echo yay4) (echo hurrah)) (echo darn))
+
+while_expr:
+"while echo true; do
+echo \"file found\"
+done" -> (while (echo true) (echo "file found"))
+"while echo true; do echo \"file found\"; done" -> (while (echo true) (echo "file found"))
+"while echo true`; do echo file done" FAIL
+
+until_expr:
+"until echo true; do
+echo \"file found\"
+done" -> (until (echo true) (echo "file found"))
+"until echo true; do echo \"file found\"; done" -> (until (echo true) (echo "file found"))
+"until echo true`; do echo file done" FAIL

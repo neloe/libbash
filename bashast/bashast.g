@@ -27,8 +27,18 @@ tokens{
 	BRACE;
 	BRACE_EXP;
 	COMMAND_SUB;
+	CASE_PATTERN;
+	SUBSHELL;
+	CURRSHELL;
+	COMPOUND_ARITH;
+	COMPOUND_COND;
+	FOR_INIT;
+	FOR_COND;
+	FOR_MOD;
 }
+
 list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
+clist	:	list_level_2;
 list_level_1
 	:	pipeline (BLANK!?('&&'^|'||'^)BLANK!? pipeline)*;
 list_level_2
@@ -56,6 +66,71 @@ commasep:	bepart(','! bepart)+;
 command_sub
 	:	DOLLAR LPAREN BLANK? pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
 	|	TICK BLANK? pipeline BLANK? TICK -> ^(COMMAND_SUB pipeline) ;
+//compound commands
+compound_comm
+	:	for_expr
+	|	sel_expr
+	|	if_expr
+	|	while_expr
+	|	until_expr
+	|	case_expr
+	|	subshell
+	|	currshell
+	|	arith_comp
+	|	cond_comp;
+
+for_expr:	FOR BLANK name (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(FOR name (word)? clist)
+	|	FOR BLANK? LLPAREN EOL? (BLANK? init=arith_expr BLANK?|BLANK)? (SEMIC (BLANK? cond=arith_expr BLANK?|BLANK)? SEMIC|DOUBLE_SEMIC) (BLANK?mod=arith_expr)? wspace* RRPAREN semiel DO wspace clist semiel DONE
+		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $cond)? ^(FOR_MOD $mod)? clist)
+	;
+sel_expr:	SELECT BLANK name (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(SELECT name (word)? clist)
+	;
+if_expr	:	IF wspace+ arg=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel EOL* (elif_expr)* (ELSE wspace+ else_list=clist BLANK? semiel EOL*)? FI
+		-> ^(IF $arg $iflist (elif_expr)* ^($else_list)?)
+	;
+elif_expr
+	:	ELIF BLANK arg=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel -> ^(IF["if"] $arg $iflist);
+while_expr
+	:	WHILE wspace istrue=clist semiel DO wspace dothis=clist semiel DONE -> ^(WHILE $istrue $dothis)
+	;
+until_expr
+	:	UNTIL wspace istrue=clist semiel DO wspace dothis=clist semiel DONE -> ^(UNTIL $istrue $dothis)
+	;
+case_expr
+	:	CASE^ BLANK! word wspace! IN! wspace! (case_stmt wspace!)* last_case? ESAC!;
+case_stmt
+	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist wspace* DOUBLE_SEMIC
+		-> ^(CASE_PATTERN $pat+ clist)
+	;
+last_case
+	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist (wspace* DOUBLE_SEMIC|(BLANK? EOL)*)
+		-> ^(CASE_PATTERN $pat+ clist)
+	;
+subshell:	LPAREN wspace? clist (BLANK? SEMIC)? (BLANK? EOL)* BLANK? RPAREN -> ^(SUBSHELL clist);
+currshell
+	:	LBRACE wspace clist semiel RBRACE -> ^(CURRSHELL clist);
+arith_comp
+	:	LLPAREN wspace? arith_expr wspace? RRPAREN -> ^(COMPOUND_ARITH arith_expr);
+cond_comp
+	:	LLSQUARE wspace comp_expr wspace RRSQUARE -> ^(COMPOUND_COND comp_expr);
+//stubs for compound commands
+arith_expr
+	:	'arith_stub';
+comp_expr
+	:	'cond_stub';
+//Rules for tokens.
+wspace	:	BLANK|EOL;
+name	:	FILEPATH;
+semiel	:	(';'|EOL) BLANK?;
+
+//definition of word.  this is just going to grow...
+word	:	command_sub
+	;
+pattern	:	command_sub
+	|	name
+	|	TIMES;
+
+//TOkens
 RANGE	:	ALPHANUM DOTDOT ALPHANUM;
 
 COMMENT
@@ -65,14 +140,40 @@ LBRACE	:	'{';
 RBRACE	:	'}';
 RPAREN	:	')';
 LPAREN	:	'(';
+LLPAREN	:	'((';
+RRPAREN	:	'))';
+LSQUARE	:	'[';
+RSQUARE	:	']';
+LLSQUARE:	'[[';
+RRSQUARE:	']]';
 TICK	:	'`';
 DOLLAR	:	'$';
+TIMES	:	'*';
+AT	:	'@';
+FOR	:	'for';
+SELECT	:	'select';
+DO	:	'do';
+DONE	:	'done';
+IN	:	'in';
+IF	:	'if';
+FI	:	'fi';
+ELSE	:	'else';
+THEN	:	'then';
+ELIF	:	'elif';
+WHILE	:	'while';
+UNTIL	:	'until';
+CASE	:	'case';
+ESAC	:	'esac';
+SEMIC	:	';';
+DOUBLE_SEMIC
+	:	';;';
+
 //reserved words.
 RES_WORD:	('!'|'case'|'do'|'done'|'elif'|'else'|'esac'|'fi'|'for'|'function'|'if'|'in'|'select'|'then'|'until'|'while'|'{'|'}'|'time'|'[['|']]');
 
 //Because bash isn't exactly whitespace dependent... need to explicitly handle blanks
 BLANK	:	(' '|'\t')+;
-EOL	:	('\r'?'\n') ;
+EOL	:	('\r'?'\n')+ ;
 //some fragments for creating words...
 fragment
 ALPHANUM:	(DIGIT|LETTER);
