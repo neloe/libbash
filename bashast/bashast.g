@@ -28,11 +28,11 @@ tokens{
 	BRACE_EXP;
 	COMMAND_SUB;
 }
-list	:	list_level_2 (';'!|'&'^|EOL!)?;
+list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
 list_level_1
 	:	pipeline (BLANK!?('&&'^|'||'^)BLANK!? pipeline)*;
 list_level_2
-	:	list_level_1 BLANK!?((';'^|'&'^)BLANK!? list_level_1 BLANK!?)*;
+	:	list_level_1 (BLANK!?(';'^|'&'^)BLANK!? list_level_1)*;
 pipeline
 	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)?simple_command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
 simple_command	:	(VAR_DEF BLANK!)* command^ redirect*;
