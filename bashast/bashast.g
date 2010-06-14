@@ -19,6 +19,7 @@ along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 grammar bashast;
 options
 {
+	backtrack=true;
 	output	= AST;
 	language	= Java;
 	ASTLabelType	= CommonTree;
@@ -44,10 +45,15 @@ list_level_1
 list_level_2
 	:	list_level_1 ((BLANK!?';'!|BLANK!?'&'^|(BLANK!? EOL!)+)BLANK!? list_level_1)*;
 pipeline
-	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)?simple_command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
-simple_command	:	(VAR_DEF BLANK!)* command^ redirect*;
-command	:	FILEPATH^ (BLANK! FILEPATH)*;
-redirect:	BLANK!?HSOP^BLANK!? FILEPATH
+	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
+command	:	simple_command
+	|	compound_comm;
+simple_command
+	:	(VAR_DEF BLANK!)* bash_command^ redirect*;
+bash_command
+	:	FILEPATH^ (BLANK! FILEPATH)*;
+redirect
+	:	BLANK!?HSOP^BLANK!? FILEPATH
 	|	BLANK!?HDOP^BLANK!? FILEPATH EOL! heredoc
 	|	BLANK!?REDIR_OP^BLANK!? DIGIT CLOSE_FD?
 	|	BLANK!?REDIR_OP^BLANK!? redir_dest;

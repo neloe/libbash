@@ -1,0 +1,10 @@
+gunit bashast;
+
+list:
+"echo \"finding file\"
+for each in `ls | grep output`; do
+echo \"I found a file\"
+done
+
+echo \"finding complete\"
+"-> (echo "finding file") (for each (COMMAND_SUB (| ls (grep output))) (echo "I found a file")) (echo "finding complete")
