@@ -4,4 +4,14 @@ list:
 "make" -> "make"
 "make && make modules_install;" -> (&& make (make modules_install))
 "make && make modules_install &" -> (& (&& make (make modules_install)))
-"cd /usr/bin; ls -al |grep more&& cp ./less ./more" -> (; (cd /usr/bin) (&& (| (ls -al) (grep more)) (cp ./less ./more)))
+"cd /usr/bin; ls -al |grep more&& cp ./less ./more" -> (cd /usr/bin) (&& (| (ls -al) (grep more)) (cp ./less ./more))
+"mkdir test
+cd test
+cp ../asdf.tar.gz .
+tar xpf asdf.tar.gz" -> (mkdir test) (cd test) (cp ../asdf.tar.gz .) (tar xpf asdf.tar.gz)
+"mkdir build && cd build
+./configure && make" -> (&& (mkdir build) (cd build)) (&& ./configure make)
+"make;make modules_install
+
+
+cp arch/x86_64/boot/bzImage /boot/kernel" -> "make (make modules_install) (cp arch/x86_64/boot/bzImage /boot/kernel)"
