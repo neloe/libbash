@@ -25,7 +25,7 @@ function rtest {
 		grammar="$grammar.g"
 		echo "Running unit tests for: $grammar"
 		cp ../$grammar .
-		java org.antlr.Tool $grammar
+		java -Xms32m -Xmx512m org.antlr.Tool $grammar
 		javac *.java
 		java org.antlr.gunit.Interp $gtest > $grammar.output
 		failed=`cat $grammar.output|grep "Failures:"|awk -F: '{print $3}'|awk '{print $1}'`
