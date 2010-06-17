@@ -15,3 +15,7 @@ tar xpf asdf.tar.gz" -> (mkdir test) (cd test) (cp ../asdf.tar.gz .) (tar xpf as
 
 
 cp arch/x86_64/boot/bzImage /boot/kernel" -> "make (make modules_install) (cp arch/x86_64/boot/bzImage /boot/kernel)"
+
+"a=asdf
+b=three
+echo \"a b\"" -> (= a asdf) (= b three) (echo "a b")

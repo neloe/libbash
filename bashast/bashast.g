@@ -49,8 +49,8 @@ list_level_2
 pipeline
 	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
 command	:	simple_command
-	|	compound_comm;
-
+	|	compound_comm
+	|	var_def+;
 simple_command
 	:	var_def* bash_command^ redirect*;
 bash_command
