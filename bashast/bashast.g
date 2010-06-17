@@ -25,6 +25,8 @@ options
 	ASTLabelType	= CommonTree;
 }
 tokens{
+	ARG;
+	ARRAY;
 	BRACE;
 	BRACE_EXP;
 	COMMAND_SUB;
@@ -48,10 +50,14 @@ pipeline
 	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
 command	:	simple_command
 	|	compound_comm;
+
 simple_command
-	:	(VAR_DEF BLANK!)* bash_command^ redirect*;
+	:	var_def* bash_command^ redirect*;
 bash_command
-	:	fpath^ (BLANK! fpath)*;
+	:	fpath^ BLANK!? (com_args BLANK!?)*;
+com_args
+	:	fpath
+	|	a=fpath b=EQUALS c=fpath -> ARG[$a.text+$b.text+$c.text];
 redirect
 	:	BLANK!?HSOP^BLANK!? fpath
 	|	BLANK!?HDOP^BLANK!? fpath EOL! heredoc
@@ -109,7 +115,7 @@ case_stmt
 		-> ^(CASE_PATTERN $pat+ clist)
 	;
 last_case
-	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist (wspace* DOUBLE_SEMIC|(BLANK? EOL)*)
+	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist (wspace* DOUBLE_SEMIC|(BLANK? EOL)+)
 		-> ^(CASE_PATTERN $pat+ clist)
 	;
 subshell:	LPAREN wspace? clist (BLANK? SEMIC)? (BLANK? EOL)* BLANK? RPAREN -> ^(SUBSHELL clist);
@@ -124,10 +130,16 @@ arith_expr
 	:	'arith_stub';
 comp_expr
 	:	'cond_stub';
+//Variables
+var_def	:	BLANK!? NAME EQUALS^ value BLANK!?;
+value	:	fpath
+	|	DIGIT+
+	|	LPAREN! BLANK!? arr_val RPAREN!;
+arr_val	:	arg+=fpath? (BLANK arg+=fpath)* -> ^(ARRAY $arg+);
 //Array variables
 arr_var_ref
-	:	DOLLAR! LBRACE! BLANK!? fpath^ (LSQUARE! ((DIGIT)+|TIMES|AT) RSQUARE!)? BLANK!? RBRACE!
-	|	DOLLAR!fpath;
+	:	DOLLAR! LBRACE! BLANK!? (NAME|ARR_VAR_REF) BLANK!? RBRACE!
+	|	DOLLAR!NAME;
 //Rules for tokens.
 wspace	:	BLANK|EOL;
 semiel	:	(';'|EOL) BLANK?;
@@ -197,7 +209,6 @@ DOTDOT	:	'..';
 BLANK	:	(' '|'\t')+;
 EOL	:	('\r'?'\n')+ ;
 //some fragments for creating words...
-fragment
 DIGIT	:	'0'..'9';
 fragment
 LETTER	:	('a'..'z'|'A'..'Z');
@@ -208,11 +219,11 @@ HSOP	:	'<<<';
 HDOP	:	'<<''-'?;
 REDIR_OP:	DIGIT?('&'?('>''>'?|'<')|'>&'|'<&'|'<>');
 FDASFILE:	'&'DIGIT'-'?;
-//variable definition.  This goes away in the next story
-VAR_DEF	:	(ALPHANUM)+EQUALS FNAME;
 //Tokens for strings
-NAME	:	(LETTER|'_')(ALPHANUM|'_')+;
+NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
+ARR_VAR_REF
+	:	NAME LSQUARE DIGIT+ RSQUARE;
 FNAME	:	'"'~('/'|'"')+'"'
-	|	~(' '|'\t'|'/'|'"'|'<'|'>'|'\n'|','|'{'|'}'|'`'|'$'|'('|')'|'|'|'#'|';'|'&')+;
+	|	~(' '|'\t'|'/'|'"'|'<'|'>'|'\n'|','|'{'|'}'|'`'|'$'|'('|')'|'|'|'#'|';'|'&'|'=')+;
 FPATH	:	'/'?((NAME|FNAME)'/'?)*;
 

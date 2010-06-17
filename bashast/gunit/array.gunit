@@ -1,5 +1,8 @@
 gunit bashast;
 
+var_def:
+"asdf=(a b c d)"->(= asdf (ARRAY a b c d))
+
 arr_var_ref:
 "$asdf" -> "asdf"
 "${asdf[3]}" -> "asdf[3]"

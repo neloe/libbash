@@ -2,10 +2,10 @@ gunit bashast;
 
 simple_command:
 "./command" -> "./command"
-"asdf=5 cat" -> (cat asdf=5)
-"asdf=5 cat out.log > result" -> (cat out.log asdf=5 (> result))
+"asdf=5 cat" -> (cat (= asdf 5))
+"asdf=5 cat out.log > result" -> (cat out.log (= asdf 5) (> result))
 "cat results.log > asdf 2> /dev/null" -> (cat results.log (> asdf) (2> /dev/null))
-"i=3 g=4 h=18 grep asdf" -> (grep asdf i=3 g=4 h=18)
+"i=3 g=4 h=18 grep asdf" -> (grep asdf (= i 3) (= g 4) (= h 18))
 "./configure --prefix=/usr/local" -> (./configure --prefix=/usr/local)
 "[[while" -> "[[while"
 "./foobär" -> "./foobär"
