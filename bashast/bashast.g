@@ -38,6 +38,7 @@ tokens{
 	FOR_INIT;
 	FOR_COND;
 	FOR_MOD;
+	FNAME;
 }
 
 list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
@@ -47,19 +48,18 @@ list_level_1
 list_level_2
 	:	list_level_1 ((BLANK!?';'!|BLANK!?'&'^|(BLANK!? EOL!)+)BLANK!? list_level_1)*;
 pipeline
-	:	('time'^ BLANK! ('-p'BLANK!)?)?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
-command	:	simple_command
-	|	compound_comm
-	|	var_def+;
+	:	time?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
+time	:	TIME^ BLANK! timearg?;
+timearg	:	'-''p' BLANK -> ARG["-p"];
+command	:	var_def+
+	|	simple_command
+	|	compound_comm;
 simple_command
-	:	var_def* bash_command^ redirect*;
+	:	var_def+ bash_command^ redirect*
+	|	bash_command^ redirect*;
 bash_command
-	:	fpath^ BLANK!? (com_args BLANK!?)*;
-com_args
-	:	a=fpath b=EQUALS c=fpath -> ARG[$a.text+$b.text+$c.text]
-	|	fpath;
-redirect
-	:	BLANK!?HSOP^BLANK!? fpath
+	:	fpath^ (BLANK! fpath)*;
+redirect:	BLANK!?HSOP^BLANK!? fpath
 	|	BLANK!?HDOP^BLANK!? fpath EOL! heredoc
 	|	BLANK!?REDIR_OP^BLANK!? DIGIT MINUS?
 	|	BLANK!?REDIR_OP^BLANK!? redir_dest;
@@ -72,7 +72,9 @@ brace_expansion
 	:	pre=fpath? brace post=fpath? -> ^(BRACE_EXP ($pre)? brace ($post)?);
 brace
 	:	LBRACE BLANK? braceexp BLANK?RBRACE -> ^(BRACE braceexp);
-braceexp:	(commasep|RANGE);
+braceexp:	commasep|range;
+range	:	DIGIT DOTDOT^ DIGIT
+	|	NAME DOTDOT^ NAME;
 bepart	:	fpath|brace;
 commasep:	bepart(','! bepart)+;
 command_sub
@@ -132,14 +134,17 @@ comp_expr
 	:	'cond_stub';
 //Variables
 var_def	:	BLANK!? NAME EQUALS^ value BLANK!?;
-value	:	fpath
-	|	DIGIT+
+value	:	DIGIT
+	|	NUMBER
+	|	fpath
 	|	LPAREN! BLANK!? arr_val RPAREN!;
-arr_val	:	arg+=fpath? (BLANK arg+=fpath)* -> ^(ARRAY $arg+);
+arr_val	:	(BLANK? arg+=fpath)* -> ^(ARRAY $arg+);
 //Array variables
-arr_var_ref
-	:	DOLLAR! LBRACE! BLANK!? (NAME|ARR_VAR_REF) BLANK!? RBRACE!
+var_ref
+	:	DOLLAR! LBRACE! BLANK!? (NAME|arr_var_ref) BLANK!? RBRACE!
 	|	DOLLAR!NAME;
+arr_var_ref
+	:	NAME^ LSQUARE! DIGIT+ RSQUARE!;
 //Rules for tokens.
 wspace	:	BLANK|EOL;
 semiel	:	(';'|EOL) BLANK?;
@@ -151,14 +156,29 @@ pattern	:	command_sub
 	|	fname
 	|	TIMES;
 //A rule for filenames
-fname	:	NAME
-	|	FNAME;
+fname	:	QUOTE qfname QUOTE
+	|	nqfname
+	|	NAME
+	|	DOT
+	|	DOTDOT
+	|	TILDE
+	|	TIMES;
+qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
+	|	(c=BLANK|c=LBRACE|c=RBRACE) b=qfname -> FNAME[$c.text+$b.text]
+	|	fnamepart
+	|	BLANK|LBRACE|RBRACE;
+nqfname	:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text];
+nqfnamep:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text]
+	|	fnamepart;
+fnamepart
+	:	BANG|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE
+		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE
+		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS;
 fpath	:	a=path_elm b=fpath -> ARG[$a.text+$b.text]
 	|	a=path_elm -> ARG[$a.text];
 path_elm:	fname
 	|	'/';
 //TOkens
-RANGE	:	ALPHANUM '..' ALPHANUM;
 
 COMMENT
     :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
@@ -196,7 +216,8 @@ RSQUARE	:	']';
 TICK	:	'`';
 DOLLAR	:	'$';
 AT	:	'@';
-
+DOT	:	'.';
+DOTDOT	:	'..';
 //Arith ops
 TIMES	:	'*';
 EQUALS	:	'=';
@@ -206,11 +227,13 @@ SEMIC	:	';';
 DOUBLE_SEMIC
 	:	';;';
 PIPE	:	'|';
+QUOTE	:	'"';
 //Because bash isn't exactly whitespace dependent... need to explicitly handle blanks
 BLANK	:	(' '|'\t')+;
 EOL	:	('\r'?'\n')+ ;
 //some fragments for creating words...
 DIGIT	:	'0'..'9';
+NUMBER	:	DIGIT DIGIT+;
 fragment
 LETTER	:	('a'..'z'|'A'..'Z');
 fragment
@@ -220,9 +243,7 @@ HSOP	:	'<<<';
 HDOP	:	'<<''-'?;
 REDIR_OP:	DIGIT?('&'?('>''>'?|'<')|'>&'|'<&'|'<>');
 FDASFILE:	'&'DIGIT'-'?;
+TILDE	:	'~';
 //Tokens for strings
 NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
-ARR_VAR_REF
-	:	NAME LSQUARE DIGIT+ RSQUARE;
-FNAME	:	'"'~('/'|'"')+'"'
-	|	~(' '|'\t'|'/'|'"'|'<'|'>'|'\n'|','|'{'|'}'|'`'|'$'|'('|')'|'|'|'#'|';'|'&'|'=')+;
+OTHER	:	.;
