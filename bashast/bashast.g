@@ -56,8 +56,8 @@ simple_command
 bash_command
 	:	fpath^ BLANK!? (com_args BLANK!?)*;
 com_args
-	:	fpath
-	|	a=fpath b=EQUALS c=fpath -> ARG[$a.text+$b.text+$c.text];
+	:	a=fpath b=EQUALS c=fpath -> ARG[$a.text+$b.text+$c.text]
+	|	fpath;
 redirect
 	:	BLANK!?HSOP^BLANK!? fpath
 	|	BLANK!?HDOP^BLANK!? fpath EOL! heredoc
@@ -153,10 +153,12 @@ pattern	:	command_sub
 //A rule for filenames
 fname	:	NAME
 	|	FNAME;
-fpath	:	fname
-	|	FPATH;
+fpath	:	a=path_elm b=fpath -> ARG[$a.text+$b.text]
+	|	a=path_elm -> ARG[$a.text];
+path_elm:	fname
+	|	'/';
 //TOkens
-RANGE	:	ALPHANUM DOTDOT ALPHANUM;
+RANGE	:	ALPHANUM '..' ALPHANUM;
 
 COMMENT
     :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
@@ -204,7 +206,6 @@ SEMIC	:	';';
 DOUBLE_SEMIC
 	:	';;';
 PIPE	:	'|';
-DOTDOT	:	'..';
 //Because bash isn't exactly whitespace dependent... need to explicitly handle blanks
 BLANK	:	(' '|'\t')+;
 EOL	:	('\r'?'\n')+ ;
@@ -225,5 +226,3 @@ ARR_VAR_REF
 	:	NAME LSQUARE DIGIT+ RSQUARE;
 FNAME	:	'"'~('/'|'"')+'"'
 	|	~(' '|'\t'|'/'|'"'|'<'|'>'|'\n'|','|'{'|'}'|'`'|'$'|'('|')'|'|'|'#'|';'|'&'|'=')+;
-FPATH	:	'/'?((NAME|FNAME)'/'?)*;
-
