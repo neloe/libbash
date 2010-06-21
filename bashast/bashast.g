@@ -51,23 +51,23 @@ command	:	simple_command
 simple_command
 	:	(VAR_DEF BLANK!)* bash_command^ redirect*;
 bash_command
-	:	FILEPATH^ (BLANK! FILEPATH)*;
+	:	fpath^ (BLANK! fpath)*;
 redirect
-	:	BLANK!?HSOP^BLANK!? FILEPATH
-	|	BLANK!?HDOP^BLANK!? FILEPATH EOL! heredoc
+	:	BLANK!?HSOP^BLANK!? fpath
+	|	BLANK!?HDOP^BLANK!? fpath EOL! heredoc
 	|	BLANK!?REDIR_OP^BLANK!? DIGIT MINUS?
 	|	BLANK!?REDIR_OP^BLANK!? redir_dest;
 
-heredoc	:	(FILEPATH EOL!)*;
+heredoc	:	(fpath EOL!)*;
 redir_dest
-	:	FILEPATH //path to a file
+	:	fpath //path to a file
 	|	FDASFILE; //handles file descriptors0
 brace_expansion
-	:	pre=FILEPATH? brace post=FILEPATH? -> ^(BRACE_EXP ($pre)? brace ($post)?);
+	:	pre=fpath? brace post=fpath? -> ^(BRACE_EXP ($pre)? brace ($post)?);
 brace
 	:	LBRACE BLANK? braceexp BLANK?RBRACE -> ^(BRACE braceexp);
 braceexp:	(commasep|RANGE);
-bepart	:	FILEPATH|brace;
+bepart	:	fpath|brace;
 commasep:	bepart(','! bepart)+;
 command_sub
 	:	DOLLAR LPAREN BLANK? pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
@@ -85,11 +85,11 @@ compound_comm
 	|	arith_comp
 	|	cond_comp;
 
-for_expr:	FOR BLANK name (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(FOR name (word)? clist)
+for_expr:	FOR BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(FOR NAME (word)? clist)
 	|	FOR BLANK? LLPAREN EOL? (BLANK? init=arith_expr BLANK?|BLANK)? (SEMIC (BLANK? cond=arith_expr BLANK?|BLANK)? SEMIC|DOUBLE_SEMIC) (BLANK?mod=arith_expr)? wspace* RRPAREN semiel DO wspace clist semiel DONE
 		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $cond)? ^(FOR_MOD $mod)? clist)
 	;
-sel_expr:	SELECT BLANK name (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(SELECT name (word)? clist)
+sel_expr:	SELECT BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(SELECT NAME (word)? clist)
 	;
 if_expr	:	IF wspace+ arg=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel EOL* (elif_expr)* (ELSE wspace+ else_list=clist BLANK? semiel EOL*)? FI
 		-> ^(IF $arg $iflist (elif_expr)* ^($else_list)?)
@@ -125,23 +125,24 @@ arith_expr
 comp_expr
 	:	'cond_stub';
 //Array variables
-arr_var_def
-	:	ARR_VAR_DEF;
 arr_var_ref
-	:	DOLLAR! LBRACE! BLANK!? FILEPATH^ (LSQUARE! ((DIGIT)+|TIMES|AT) RSQUARE!)? BLANK!? RBRACE! 
-	|	DOLLAR!FILEPATH;
+	:	DOLLAR! LBRACE! BLANK!? fpath^ (LSQUARE! ((DIGIT)+|TIMES|AT) RSQUARE!)? BLANK!? RBRACE!
+	|	DOLLAR!fpath;
 //Rules for tokens.
 wspace	:	BLANK|EOL;
-name	:	FILEPATH;
 semiel	:	(';'|EOL) BLANK?;
 
 //definition of word.  this is just going to grow...
 word	:	command_sub
 	;
 pattern	:	command_sub
-	|	name
+	|	fname
 	|	TIMES;
-
+//A rule for filenames
+fname	:	NAME
+	|	FNAME;
+fpath	:	fname
+	|	FPATH;
 //TOkens
 RANGE	:	ALPHANUM DOTDOT ALPHANUM;
 
@@ -197,19 +198,21 @@ BLANK	:	(' '|'\t')+;
 EOL	:	('\r'?'\n')+ ;
 //some fragments for creating words...
 fragment
-ALPHANUM:	(DIGIT|LETTER);
 DIGIT	:	'0'..'9';
 fragment
 LETTER	:	('a'..'z'|'A'..'Z');
-//Some special redirect tokens
+fragment
+ALPHANUM:	(DIGIT|LETTER);
+//Some special redirect operators
 HSOP	:	'<<<';
 HDOP	:	'<<''-'?;
 REDIR_OP:	DIGIT?('&'?('>''>'?|'<')|'>&'|'<&'|'<>');
-fragment
-FILENAME:	'"'(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|' '|'-'|'_')*'"'
-	|	(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|'-'|'_')*;
 FDASFILE:	'&'DIGIT'-'?;
-FILEPATH:	'/'?FILENAME('/'FILENAME)*;
-VAR_DEF	:	(ALPHANUM)+EQUALS FILENAME;
-ARR_VAR_DEF
-	:	(ALPHANUM)+EQUALS LPAREN (BLANK? FILENAME)* BLANK? RPAREN;
+//variable definition.  This goes away in the next story
+VAR_DEF	:	(ALPHANUM)+EQUALS FNAME;
+//Tokens for strings
+NAME	:	(LETTER|'_')(ALPHANUM|'_')+;
+FNAME	:	'"'~('/'|'"')+'"'
+	|	~(' '|'\t'|'/'|'"'|'<'|'>'|'\n'|','|'{'|'}'|'`'|'$'|'('|')'|'|'|'#'|';'|'&')+;
+FPATH	:	'/'?((NAME|FNAME)'/'?)*;
+
