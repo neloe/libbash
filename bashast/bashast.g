@@ -124,6 +124,12 @@ arith_expr
 	:	'arith_stub';
 comp_expr
 	:	'cond_stub';
+//Array variables
+arr_var_def
+	:	ARR_VAR_DEF;
+arr_var_ref
+	:	DOLLAR! LBRACE! BLANK!? FILEPATH^ (LSQUARE! ((DIGIT)+|TIMES|AT) RSQUARE!)? BLANK!? RBRACE! 
+	|	DOLLAR!FILEPATH;
 //Rules for tokens.
 wspace	:	BLANK|EOL;
 name	:	FILEPATH;
@@ -138,11 +144,6 @@ pattern	:	command_sub
 
 //TOkens
 RANGE	:	ALPHANUM DOTDOT ALPHANUM;
-arr_var_def
-	:	ARR_VAR_DEF;
-arr_var_ref
-	:	DOLLAR! LBRACE! BLANK!? FILEPATH^ (LSQUARE! ((DIGIT)+|TIMES|AT) RSQUARE!)? BLANK!? RBRACE! 
-	|	DOLLAR!FILEPATH;
 
 COMMENT
     :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
