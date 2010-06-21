@@ -55,7 +55,7 @@ bash_command
 redirect
 	:	BLANK!?HSOP^BLANK!? FILEPATH
 	|	BLANK!?HDOP^BLANK!? FILEPATH EOL! heredoc
-	|	BLANK!?REDIR_OP^BLANK!? DIGIT CLOSE_FD?
+	|	BLANK!?REDIR_OP^BLANK!? DIGIT MINUS?
 	|	BLANK!?REDIR_OP^BLANK!? redir_dest;
 
 heredoc	:	(FILEPATH EOL!)*;
@@ -148,41 +148,50 @@ RANGE	:	ALPHANUM DOTDOT ALPHANUM;
 COMMENT
     :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
     ;
+//Bash "reserved words"
+BANG	:	'!';
+CASE	:	'case';
+DO	:	'do';
+DONE	:	'done';
+ELIF	:	'elif';
+ELSE	:	'else';
+ESAC	:	'esac';
+FI	:	'fi';
+FOR	:	'for';
+FUNCTION:	'function';
+IF	:	'if';
+IN	:	'in';
+SELECT	:	'select';
+THEN	:	'then';
+UNTIL	:	'until';
+WHILE	:	'while';
 LBRACE	:	'{';
 RBRACE	:	'}';
+TIME	:	'time';
+LLSQUARE:	'[[';
+RRSQUARE:	']]';
+
+//Other special useful symbols
 RPAREN	:	')';
 LPAREN	:	'(';
 LLPAREN	:	'((';
 RRPAREN	:	'))';
 LSQUARE	:	'[';
 RSQUARE	:	']';
-LLSQUARE:	'[[';
-RRSQUARE:	']]';
 TICK	:	'`';
 DOLLAR	:	'$';
-TIMES	:	'*';
 AT	:	'@';
-FOR	:	'for';
-SELECT	:	'select';
-DO	:	'do';
-DONE	:	'done';
-IN	:	'in';
-IF	:	'if';
-FI	:	'fi';
-ELSE	:	'else';
-THEN	:	'then';
-ELIF	:	'elif';
-WHILE	:	'while';
-UNTIL	:	'until';
-CASE	:	'case';
-ESAC	:	'esac';
+
+//Arith ops
+TIMES	:	'*';
+EQUALS	:	'=';
+MINUS	:	'-';
+//some separators
 SEMIC	:	';';
 DOUBLE_SEMIC
 	:	';;';
-
-//reserved words.
-RES_WORD:	('!'|'case'|'do'|'done'|'elif'|'else'|'esac'|'fi'|'for'|'function'|'if'|'in'|'select'|'then'|'until'|'while'|'{'|'}'|'time'|'[['|']]');
-
+PIPE	:	'|';
+DOTDOT	:	'..';
 //Because bash isn't exactly whitespace dependent... need to explicitly handle blanks
 BLANK	:	(' '|'\t')+;
 EOL	:	('\r'?'\n')+ ;
@@ -196,15 +205,11 @@ LETTER	:	('a'..'z'|'A'..'Z');
 HSOP	:	'<<<';
 HDOP	:	'<<''-'?;
 REDIR_OP:	DIGIT?('&'?('>''>'?|'<')|'>&'|'<&'|'<>');
-CLOSE_FD:	'-';
-DOTDOT	:	'..';
 fragment
 FILENAME:	'"'(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|' '|'-'|'_')*'"'
 	|	(ALPHANUM|'.'|'-'|'_')(ALPHANUM|'.'|'-'|'_')*;
 FDASFILE:	'&'DIGIT'-'?;
 FILEPATH:	'/'?FILENAME('/'FILENAME)*;
 VAR_DEF	:	(ALPHANUM)+EQUALS FILENAME;
-EQUALS	:	'=';
-PIPE	:	'|';
 ARR_VAR_DEF
 	:	(ALPHANUM)+EQUALS LPAREN (BLANK? FILENAME)* BLANK? RPAREN;
