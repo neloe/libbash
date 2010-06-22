@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 **/
-gunit bashast_cond;
+gunit bashast;
 
 cond_expr:
 "[[ -a this/is.afile ]]" -> (-a this/is.afile)

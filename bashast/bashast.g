@@ -39,6 +39,13 @@ tokens{
 	FOR_COND;
 	FOR_MOD;
 	FNAME;
+	OFFSET;
+	LIST_EXPAND;
+	OP;
+	PRE_INCR;
+	PRE_DECR;
+	POST_INCR;
+	POST_DECR;
 }
 
 list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
@@ -50,7 +57,7 @@ list_level_2
 pipeline
 	:	time?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
 time	:	TIME^ BLANK! timearg?;
-timearg	:	'-''p' BLANK -> ARG["-p"];
+timearg	:	'-p' BLANK!;
 command	:	var_def+
 	|	simple_command
 	|	compound_comm;
@@ -59,15 +66,31 @@ simple_command
 	|	bash_command^ redirect*;
 bash_command
 	:	fpath^ (BLANK! fpath)*;
-redirect:	BLANK!?HSOP^BLANK!? fpath
-	|	BLANK!?HDOP^BLANK!? fpath EOL! heredoc
-	|	BLANK!?REDIR_OP^BLANK!? DIGIT MINUS?
-	|	BLANK!?REDIR_OP^BLANK!? redir_dest;
+redirect:	BLANK!?hsop^BLANK!? fpath
+	|	BLANK!?hdop^BLANK!? fpath EOL! heredoc
+	|	BLANK!?redir_op^BLANK!? DIGIT MINUS?
+	|	BLANK!?redir_op^BLANK!? redir_dest;
 
 heredoc	:	(fpath EOL!)*;
 redir_dest
 	:	fpath //path to a file
-	|	FDASFILE; //handles file descriptors0
+	|	file_desc_as_file; //handles file descriptors0
+file_desc_as_file
+	:	a='&'b=DIGIT -> OP[$a.text+$b.text]
+	|	a='&'b=DIGIT'-' -> OP[$a.text+$b.text+"-"];
+hsop	:	'<''<''<' -> OP["<<<"];
+hdop	:	'<''<''-' -> OP["<<-"]
+	|	'<''<' -> OP["<<"];
+redir_op:	'&''<' -> OP["&<"]
+	|	'>''&' -> OP[">&"]
+	|	'<''&' -> OP["<&"]
+	|	'<''>' -> OP["<>"]
+	|	'>''>' -> OP[">>"]
+	|	'&''>' -> OP["&>"]
+	|	'&''>''>' -> OP ["&>>"]
+	|	'<'
+	|	'>'
+	|	fd=DIGIT op=redir_op -> OP[$fd.text+$op.text];
 brace_expansion
 	:	pre=fpath? brace post=fpath? -> ^(BRACE_EXP ($pre)? brace ($post)?);
 brace
@@ -94,8 +117,8 @@ compound_comm
 	|	cond_comp;
 
 for_expr:	FOR BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(FOR NAME (word)? clist)
-	|	FOR BLANK? LLPAREN EOL? (BLANK? init=arith_expr BLANK?|BLANK)? (SEMIC (BLANK? cond=arith_expr BLANK?|BLANK)? SEMIC|DOUBLE_SEMIC) (BLANK?mod=arith_expr)? wspace* RRPAREN semiel DO wspace clist semiel DONE
-		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $cond)? ^(FOR_MOD $mod)? clist)
+	|	FOR BLANK? LLPAREN EOL? (BLANK? init=arith_expr BLANK?|BLANK)? (SEMIC (BLANK? fcond=arith_expr BLANK?|BLANK)? SEMIC|DOUBLE_SEMIC) (BLANK?mod=arith_expr)? wspace* RRPAREN semiel DO wspace clist semiel DONE
+		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $fcond)? ^(FOR_MOD $mod)? clist)
 	;
 sel_expr:	SELECT BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(SELECT NAME (word)? clist)
 	;
@@ -141,10 +164,35 @@ value	:	DIGIT
 arr_val	:	(BLANK? arg+=fpath)* -> ^(ARRAY $arg+);
 //Array variables
 var_ref
-	:	DOLLAR! LBRACE! BLANK!? (NAME|arr_var_ref) BLANK!? RBRACE!
+	:	DOLLAR! LBRACE! BLANK!? var_exp BLANK!? RBRACE!
 	|	DOLLAR!NAME;
+var_exp	:	NAME WORDOP^ NAME
+	|	NAME COLON os=num (COLON len=num)? -> ^(OFFSET NAME $os ^($len)?)
+	|	BANG^ NAME (TIMES|AT)
+	|	BANG NAME LSQUARE (op=TIMES|op=AT) RSQUARE -> ^(LIST_EXPAND NAME $op)
+	|	POUND^ NAME
+	|	NAME (POUND^|POUNDPOUND^) fpath
+	|	NAME (PCT^|PCTPCT^) fpath
+	|	NAME SLASH^ fname SLASH! fname
+	|	arr_var_ref
+	|	NAME;
 arr_var_ref
 	:	NAME^ LSQUARE! DIGIT+ RSQUARE!;
+//Conditional Expressions
+cond_expr
+	:	LLSQUARE! BLANK! cond BLANK! RRSQUARE!
+	|	LSQUARE! BLANK! cond BLANK! RSQUARE!
+	|	TEST! BLANK! cond;
+cond
+	:	binary_cond
+	|	unary_cond;
+binary_cond
+	:	fname BLANK! BSTROP^ BLANK! fname (BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
+	|	fpath BLANK! BFILEOP BLANK! fpath(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
+	|	num BLANK! BIOP^ BLANK! num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?;
+unary_cond
+	:	USTROP^ BLANK! fname
+	|	UFILEOP^ BLANK! fpath;
 //Rules for tokens.
 wspace	:	BLANK|EOL;
 semiel	:	(';'|EOL) BLANK?;
@@ -155,13 +203,15 @@ word	:	command_sub
 pattern	:	command_sub
 	|	fname
 	|	TIMES;
+num	:	DIGIT|NUMBER;
 //A rule for filenames
-fname	:	QUOTE qfname QUOTE
+fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	nqfname
 	|	NAME
 	|	DOT
 	|	DOTDOT
 	|	TILDE
+	|	TEST
 	|	TIMES;
 qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
 	|	(c=BLANK|c=LBRACE|c=RBRACE) b=qfname -> FNAME[$c.text+$b.text]
@@ -172,16 +222,46 @@ nqfnamep:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text]
 	|	fnamepart;
 fnamepart
 	:	BANG|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE
-		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE
-		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS;
+		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE|TEST
+		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS
+		|BIOP|UFILEOP|BFILEOP|USTROP|BSTROP|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET;
 fpath	:	a=path_elm b=fpath -> ARG[$a.text+$b.text]
 	|	a=path_elm -> ARG[$a.text];
 path_elm:	fname
-	|	'/';
+	|	SLASH;
+//Arithmetic expansion
+arithmetic
+	:	logicor;
+primary	:	num
+	|	LPAREN! arith_expr RPAREN!;
+post_inc_dec
+	:	NAME BLANK?INC -> ^(POST_INCR NAME)
+	|	NAME BLANK?DEC -> ^(POST_DECR NAME);
+pre_inc_dec
+	:	INC BLANK?NAME -> ^(PRE_INCR NAME)
+	|	DEC BLANK?NAME -> ^(PRE_DECR NAME);
+unary	:	primary
+	|	PLUS^ primary
+	|	MINUS^ primary
+	|	post_inc_dec
+	|	pre_inc_dec;
+negation:	(BANG^BLANK!?|TILDE^BLANK!?)?unary;
+exp	:	negation (BLANK!? EXP^ BLANK!? negation)* ;
+tdm	:	exp (BLANK!?(TIMES^|SLASH^|PCT^)BLANK!? exp)*;
+addsub	:	tdm (BLANK!? (PLUS^|MINUS^)BLANK!? tdm)*;
+shifts	:	addsub (BLANK!? (shiftop^) BLANK!? addsub)*;
+shiftop	:	'<''<' -> OP["<<"]
+	|	'>''>' -> OP[">>"];
+compare	:	shifts (BLANK!? (LEQ^|GEQ^|'<'^|'>'^)BLANK!? shifts)?;
+bitand	:	compare (BLANK!? AMP^ BLANK!? compare)*;
+bitxor	:	bitand (BLANK!? CARET^ BLANK!? bitand)*;
+bitor	:	bitxor (BLANK!? PIPE^ BLANK!? bitxor)*;
+logicand:	bitor (BLANK!? LOGICAND^ BLANK!? bitor)*;
+logicor	:	logicand (BLANK!? LOGICOR^ BLANK!? logicand)*;
 //TOkens
 
 COMMENT
-    :   BLANK?'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
+    :   (BLANK|EOL)'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
     ;
 //Bash "reserved words"
 BANG	:	'!';
@@ -222,6 +302,14 @@ DOTDOT	:	'..';
 TIMES	:	'*';
 EQUALS	:	'=';
 MINUS	:	'-';
+PLUS	:	'+';
+INC	:	'++';
+DEC	:	'--';
+EXP	:	'**';
+AMP	:	'&';
+LEQ	:	'<=';
+GEQ	:	'>=';
+CARET	:	'^';
 //some separators
 SEMIC	:	';';
 DOUBLE_SEMIC
@@ -239,11 +327,26 @@ LETTER	:	('a'..'z'|'A'..'Z');
 fragment
 ALPHANUM:	(DIGIT|LETTER);
 //Some special redirect operators
-HSOP	:	'<<<';
-HDOP	:	'<<''-'?;
-REDIR_OP:	DIGIT?('&'?('>''>'?|'<')|'>&'|'<&'|'<>');
-FDASFILE:	'&'DIGIT'-'?;
 TILDE	:	'~';
+//Tokens for parameter expansion
+POUND	:	'#';
+POUNDPOUND
+	:	'##';
+PCT	:	'%';
+PCTPCT	:	'%%';
+SLASH	:	'/';
+WORDOP	:	(':-'|':='|':?'|':+');
+COLON	:	':';
+//Operators for conditional statements
+TEST	:	'test';
+LOGICAND
+	:	'&&';
+LOGICOR	:	'||';
+BIOP		:	('-eq'|'-ne'|'-lt'|'-le'|'-gt'|'-ge');
+UFILEOP		:	('-a'|'-b'|'-c'|'-d'|'-e'|'-f'|'-h'|'-k'|'-p'|'-r'|'-s'|'-t'|'-u'|'-w'|'-x'|'-O'|'-G'|'-L'|'-S'|'-N');
+BFILEOP		:	('-nt'|'-ot'|'-ef');
+USTROP		:	('-n'|'-z');
+BSTROP		:	('=='|'!'?'='|'<'|'>');
 //Tokens for strings
 NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
 OTHER	:	.;

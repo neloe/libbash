@@ -15,9 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 **/
-gunit bashast_param;
+gunit bashast;
 
-param_exp:
+var_ref:
 "$asdf" -> "asdf"
 "${asdf}" -> "asdf"
 "${asdf:-foo}" -> (:- asdf foo)
@@ -25,8 +25,8 @@ param_exp:
 "${foo:5:2}" -> (OFFSET foo 5 2)
 "${!asdf*}" -> (! asdf *)
 "${!asdf@}" -> (! asdf @)
-"${!asdf[*]}" -> (! asdf [ * ])
-"${!asdf[@]}" -> (! asdf [ @ ])
+"${!asdf[*]}" -> (LIST_EXPAND asdf *)
+"${!asdf[@]}" -> (LIST_EXPAND asdf @)
 "${#foo}" -> (# foo)
 "${foo#bar}" -> (# foo bar)
 "${foo##bar}" -> (## foo bar)

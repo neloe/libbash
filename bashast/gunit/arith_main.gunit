@@ -1,0 +1,95 @@
+/**
+Copyright 2010 Nathan Eloe
+
+This file is part of libbash.
+
+libbash is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 2 of the License, or
+(at your option) any later version.
+
+libbash is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with libbash.  If not, see <http://www.gnu.org/licenses/>.
+**/
+gunit bashast;
+
+//for this set of unittests, we'll start from the
+//top of the order of ops
+
+primary:
+"3" -> "3"
+
+post_inc_dec:
+"b--" -> (POST_DECR b)
+"i++" -> (POST_INCR i)
+
+pre_inc_dec:
+"++i" -> (PRE_INCR i)
+"--b" -> (PRE_DECR b)
+
+unary:
+"6" -> "6"
+"+9" -> (+ 9)
+"-15" -> (- 15)
+"++ z" -> (PRE_INCR z)
+"f--" -> (POST_DECR f)
+
+negation:
+"8" -> "8"
+
+exp:
+"8" -> "8"
+"6**2" -> (** 6 2)
+"-5**+4" -> (** (- 5) (+ 4))
+
+tdm:
+"9" -> "9"
+"7 * 9" -> (* 7 9)
+"7 / 9" -> (/ 7 9)
+"7 % 9" -> (% 7 9)
+"6*4*3" -> (* (* 6 4) 3)
+"6*4/3" -> (/ (* 6 4) 3)
+"6%4*3" -> (* (% 6 4) 3)
+"7/3**6" -> (/ 7 (** 3 6))
+"7/-3**6" -> (/ 7 (** (- 3) 6))
+
+addsub:
+"10" -> "10"
+"9+27" -> (+ 9 27)
+"9-27" -> (- 9 27)
+"9-27+8" -> (+ (- 9 27) 8)
+"9-35*-2" -> (- 9 (* 35 (- 2)))
+"9*5+2" -> (+ (* 9 5) 2)
+
+shifts:
+"16" -> "16"
+"16+2>>3" -> (>> (+ 16 2) 3)
+"16+2<<3" -> (<< (+ 16 2) 3)
+
+compare:
+"17" ->"17"
+"19<20" -> (< 19 20)
+
+bitand:
+"17" -> "17"
+"17 & 15" -> (& 17 15)
+
+bitxor:
+"17" -> "17"
+"17 ^ 15" -> (^ 17 15)
+
+bitor:
+"17" -> "17"
+"17 | 15" -> (| 17 15)
+
+logicand:
+"17" -> "17"
+"17 && 15" -> (&& 17 15)
+
+logicor:
+"17" -> "17"
+"17 || 15" -> (|| 17 15)
