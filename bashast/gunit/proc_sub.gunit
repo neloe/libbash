@@ -1,0 +1,5 @@
+gunit bashast;
+
+proc_sub:
+"<( true )" -> (PROC_SUB < true)
+">(false)" -> (PROC_SUB > false)

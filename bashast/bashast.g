@@ -46,6 +46,7 @@ tokens{
 	PRE_DECR;
 	POST_INCR;
 	POST_DECR;
+	PROC_SUB;
 }
 
 list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
@@ -245,7 +246,8 @@ unary	:	primary
 	|	MINUS^ primary
 	|	post_inc_dec
 	|	pre_inc_dec;
-negation:	(BANG^BLANK!?|TILDE^BLANK!?)?unary;
+negation
+	:	(BANG^BLANK!?|TILDE^BLANK!?)?unary;
 exp	:	negation (BLANK!? EXP^ BLANK!? negation)* ;
 tdm	:	exp (BLANK!?(TIMES^|SLASH^|PCT^)BLANK!? exp)*;
 addsub	:	tdm (BLANK!? (PLUS^|MINUS^)BLANK!? tdm)*;
@@ -258,10 +260,12 @@ bitxor	:	bitand (BLANK!? CARET^ BLANK!? bitand)*;
 bitor	:	bitxor (BLANK!? PIPE^ BLANK!? bitxor)*;
 logicand:	bitor (BLANK!? LOGICAND^ BLANK!? bitor)*;
 logicor	:	logicand (BLANK!? LOGICOR^ BLANK!? logicand)*;
+//process substitution
+proc_sub:	(dir='<'|dir='>')LPAREN BLANK? clist BLANK? RPAREN -> ^(PROC_SUB $dir clist);
 //TOkens
 
 COMMENT
-    :   (BLANK|EOL)'#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
+    :  (BLANK|EOL) '#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
     ;
 //Bash "reserved words"
 BANG	:	'!';
