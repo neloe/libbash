@@ -56,7 +56,7 @@ list_level_1
 list_level_2
 	:	list_level_1 ((BLANK!?';'!|BLANK!?'&'^|(BLANK!? EOL!)+)BLANK!? list_level_1)*;
 pipeline
-	:	time?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? simple_command)*;
+	:	time?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? command)*;
 time	:	TIME^ BLANK! timearg?;
 timearg	:	'-p' BLANK!;
 command	:	var_def+
@@ -66,11 +66,17 @@ simple_command
 	:	var_def+ bash_command^ redirect*
 	|	bash_command^ redirect*;
 bash_command
-	:	fpath^ (BLANK! fpath)*;
+	:	fpath^ (BLANK! arg)*;
+arg	:	brace_expansion
+	|	var_ref
+	|	fpath
+	|	command_sub
+	|	var_ref;
 redirect:	BLANK!?hsop^BLANK!? fpath
 	|	BLANK!?hdop^BLANK!? fpath EOL! heredoc
 	|	BLANK!?redir_op^BLANK!? DIGIT MINUS?
-	|	BLANK!?redir_op^BLANK!? redir_dest;
+	|	BLANK!?redir_op^BLANK!? redir_dest
+	|	BLANK!?proc_sub;
 
 heredoc	:	(fpath EOL!)*;
 redir_dest
@@ -99,7 +105,10 @@ brace
 braceexp:	commasep|range;
 range	:	DIGIT DOTDOT^ DIGIT
 	|	NAME DOTDOT^ NAME;
-bepart	:	fpath|brace;
+bepart	:	fpath
+	|	brace
+	|	var_ref
+	|	command_sub;
 commasep:	bepart(','! bepart)+;
 command_sub
 	:	DOLLAR LPAREN BLANK? pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
@@ -118,16 +127,16 @@ compound_comm
 	|	cond_comp;
 
 for_expr:	FOR BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(FOR NAME (word)? clist)
-	|	FOR BLANK? LLPAREN EOL? (BLANK? init=arith_expr BLANK?|BLANK)? (SEMIC (BLANK? fcond=arith_expr BLANK?|BLANK)? SEMIC|DOUBLE_SEMIC) (BLANK?mod=arith_expr)? wspace* RRPAREN semiel DO wspace clist semiel DONE
+	|	FOR BLANK? LLPAREN EOL? (BLANK? init=arithmetic BLANK?|BLANK)? (SEMIC (BLANK? fcond=arithmetic BLANK?|BLANK)? SEMIC|DOUBLE_SEMIC) (BLANK?mod=arithmetic)? wspace* RRPAREN semiel DO wspace clist semiel DONE
 		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $fcond)? ^(FOR_MOD $mod)? clist)
 	;
 sel_expr:	SELECT BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(SELECT NAME (word)? clist)
 	;
-if_expr	:	IF wspace+ arg=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel EOL* (elif_expr)* (ELSE wspace+ else_list=clist BLANK? semiel EOL*)? FI
-		-> ^(IF $arg $iflist (elif_expr)* ^($else_list)?)
+if_expr	:	IF wspace+ ag=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel EOL* (elif_expr)* (ELSE wspace+ else_list=clist BLANK? semiel EOL*)? FI
+		-> ^(IF $ag $iflist (elif_expr)* ^($else_list)?)
 	;
 elif_expr
-	:	ELIF BLANK arg=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel -> ^(IF["if"] $arg $iflist);
+	:	ELIF BLANK ag=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel -> ^(IF["if"] $ag $iflist);
 while_expr
 	:	WHILE wspace istrue=clist semiel DO wspace dothis=clist semiel DONE -> ^(WHILE $istrue $dothis)
 	;
@@ -148,21 +157,17 @@ subshell:	LPAREN wspace? clist (BLANK? SEMIC)? (BLANK? EOL)* BLANK? RPAREN -> ^(
 currshell
 	:	LBRACE wspace clist semiel RBRACE -> ^(CURRSHELL clist);
 arith_comp
-	:	LLPAREN wspace? arith_expr wspace? RRPAREN -> ^(COMPOUND_ARITH arith_expr);
+	:	LLPAREN wspace? arithmetic wspace? RRPAREN -> ^(COMPOUND_ARITH arithmetic);
 cond_comp
-	:	LLSQUARE wspace comp_expr wspace RRSQUARE -> ^(COMPOUND_COND comp_expr);
-//stubs for compound commands
-arith_expr
-	:	'arith_stub';
-comp_expr
-	:	'cond_stub';
+	:	cond_expr -> ^(COMPOUND_COND cond_expr);
 //Variables
-var_def	:	BLANK!? NAME EQUALS^ value BLANK!?;
+var_def	:	BLANK!? NAME EQUALS^ value BLANK!?
+	|	BLANK!? 'l'!'e'!'t'! NAME EQUALS^ arithmetic BLANK!?;
 value	:	DIGIT
 	|	NUMBER
 	|	fpath
 	|	LPAREN! BLANK!? arr_val RPAREN!;
-arr_val	:	(BLANK? arg+=fpath)* -> ^(ARRAY $arg+);
+arr_val	:	(BLANK? ag+=fpath)* -> ^(ARRAY $ag+);
 //Array variables
 var_ref
 	:	DOLLAR! LBRACE! BLANK!? var_exp BLANK!? RBRACE!
@@ -181,26 +186,49 @@ arr_var_ref
 	:	NAME^ LSQUARE! DIGIT+ RSQUARE!;
 //Conditional Expressions
 cond_expr
-	:	LLSQUARE! BLANK! cond BLANK! RRSQUARE!
-	|	LSQUARE! BLANK! cond BLANK! RSQUARE!
-	|	TEST! BLANK! cond;
-cond
-	:	binary_cond
+	:	LLSQUARE! wspace! cond wspace! RRSQUARE!
+	|	LSQUARE! wspace! cond wspace! RSQUARE!
+	|	TEST! wspace! cond;
+cond	:	binary_cond
 	|	unary_cond;
 binary_cond
-	:	fname BLANK! BSTROP^ BLANK! fname (BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
-	|	fpath BLANK! BFILEOP BLANK! fpath(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
-	|	num BLANK! BIOP^ BLANK! num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?;
+	:	condpart BLANK!? bstrop^ BLANK!? condpart(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
+	|	num BLANK! BOP^ BLANK! num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?;
+bstrop	:	BOP
+	|	EQUALS
+	|	BANG EQUALS -> OP["!="]
+	|	EQUALS EQUALS -> OP["=="]
+	|	'<'
+	|	'>';
 unary_cond
-	:	USTROP^ BLANK! fname
-	|	UFILEOP^ BLANK! fpath;
+	:	UOP^ BLANK! condpart;
+condpart:	brace_expansion
+	|	str
+	|	fpath
+	|	arithmetic;
+str	:	CASE
+	|	DO
+	|	DONE
+	|	ELIF
+	|	ELSE
+	|	ESAC
+	|	FI
+	|	FOR
+	|	FUNCTION
+	|	IF
+	|	IN
+	|	SELECT
+	|	THEN
+	|	UNTIL
+	|	WHILE;
 //Rules for tokens.
 wspace	:	BLANK|EOL;
 semiel	:	(';'|EOL) BLANK?;
 
 //definition of word.  this is just going to grow...
 word	:	command_sub
-	;
+	|	brace_expansion
+	|	var_ref;
 pattern	:	command_sub
 	|	fname
 	|	TIMES;
@@ -213,7 +241,9 @@ fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	DOTDOT
 	|	TILDE
 	|	TEST
-	|	TIMES;
+	|	TIMES
+	|	BOP
+	|	UOP;
 qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
 	|	(c=BLANK|c=LBRACE|c=RBRACE) b=qfname -> FNAME[$c.text+$b.text]
 	|	fnamepart
@@ -225,7 +255,7 @@ fnamepart
 	:	BANG|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE
 		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE|TEST
 		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS
-		|BIOP|UFILEOP|BFILEOP|USTROP|BSTROP|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET;
+		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP;
 fpath	:	a=path_elm b=fpath -> ARG[$a.text+$b.text]
 	|	a=path_elm -> ARG[$a.text];
 path_elm:	fname
@@ -234,7 +264,9 @@ path_elm:	fname
 arithmetic
 	:	logicor;
 primary	:	num
-	|	LPAREN! arith_expr RPAREN!;
+	|	var_ref
+	|	command_sub
+	|	LPAREN! arithmetic RPAREN!;
 post_inc_dec
 	:	NAME BLANK?INC -> ^(POST_INCR NAME)
 	|	NAME BLANK?DEC -> ^(POST_DECR NAME);
@@ -346,11 +378,8 @@ TEST	:	'test';
 LOGICAND
 	:	'&&';
 LOGICOR	:	'||';
-BIOP		:	('-eq'|'-ne'|'-lt'|'-le'|'-gt'|'-ge');
-UFILEOP		:	('-a'|'-b'|'-c'|'-d'|'-e'|'-f'|'-h'|'-k'|'-p'|'-r'|'-s'|'-t'|'-u'|'-w'|'-x'|'-O'|'-G'|'-L'|'-S'|'-N');
-BFILEOP		:	('-nt'|'-ot'|'-ef');
-USTROP		:	('-n'|'-z');
-BSTROP		:	('=='|'!'?'='|'<'|'>');
+BOP	:	MINUS LETTER LETTER;
+UOP	:	MINUS LETTER;
 //Tokens for strings
 NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
 OTHER	:	.;

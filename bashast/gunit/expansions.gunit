@@ -1,0 +1,11 @@
+gunit bashast;
+
+list:
+"echo a{b,c,d}" -> (echo (BRACE_EXP a (BRACE b c d)))
+"((5+5))" -> (COMPOUND_ARITH (+ 5 5))
+"(( 4 + $asdf ))" -> (COMPOUND_ARITH (+ 4 asdf))
+"[[ while=while ]] && echo true" -> (&& (COMPOUND_COND (= while while)) (echo true))
+"for each in `ls |grep output`; do
+echo $each
+done" -> (for each (COMMAND_SUB (| ls (grep output))) (echo each))
+"wc <(cat /usr/share/dict/linux.words)" -> (wc (PROC_SUB < (cat /usr/share/dict/linux.words)))
