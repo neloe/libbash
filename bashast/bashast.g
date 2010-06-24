@@ -161,13 +161,18 @@ arith_comp
 cond_comp
 	:	cond_expr -> ^(COMPOUND_COND cond_expr);
 //Variables
-var_def	:	BLANK!? NAME EQUALS^ value BLANK!?
+var_def	:	BLANK? NAME LSQUARE BLANK? index BLANK? RSQUARE EQUALS value BLANK? -> ^(EQUALS ^(NAME  index) value)
+	|	BLANK!? NAME EQUALS^ value BLANK!?
 	|	BLANK!? 'l'!'e'!'t'! NAME EQUALS^ arithmetic BLANK!?;
 value	:	DIGIT
 	|	NUMBER
 	|	fpath
 	|	LPAREN! BLANK!? arr_val RPAREN!;
-arr_val	:	(BLANK? ag+=fpath)* -> ^(ARRAY $ag+);
+arr_val	:	(BLANK? ag+=val)* -> ^(ARRAY $ag+);
+val	:	'['!BLANK!?index BLANK!?']'!EQUALS^ fpath
+	|	fpath;
+index	:	num
+	|	NAME;
 //Array variables
 var_ref
 	:	DOLLAR! LBRACE! BLANK!? var_exp BLANK!? RBRACE!
