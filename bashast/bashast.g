@@ -52,11 +52,11 @@ tokens{
 list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
 clist	:	list_level_2;
 list_level_1
-	:	pipeline (BLANK!?('&&'^|'||'^)BLANK!? pipeline)*;
+	:	(function|pipeline) (BLANK!?('&&'^|'||'^)BLANK!? (function|pipeline))*;
 list_level_2
 	:	list_level_1 ((BLANK!?';'!|BLANK!?'&'^|(BLANK!? EOL!)+)BLANK!? list_level_1)*;
 pipeline
-	:	time?('!' BLANK)? command^ (BLANK!?PIPE^ BLANK!? command)*;
+	:	time?('!' BLANK!)? BLANK!? command^ (BLANK!?PIPE^ BLANK!? command)*;
 time	:	TIME^ BLANK! timearg?;
 timearg	:	'-p' BLANK!;
 command	:	var_def+
@@ -248,7 +248,8 @@ fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	TEST
 	|	TIMES
 	|	BOP
-	|	UOP;
+	|	UOP
+	|	COLON;
 qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
 	|	(c=BLANK|c=LBRACE|c=RBRACE) b=qfname -> FNAME[$c.text+$b.text]
 	|	fnamepart
@@ -299,6 +300,10 @@ logicand:	bitor (BLANK!? LOGICAND^ BLANK!? bitor)*;
 logicor	:	logicand (BLANK!? LOGICOR^ BLANK!? logicand)*;
 //process substitution
 proc_sub:	(dir='<'|dir='>')LPAREN BLANK? clist BLANK? RPAREN -> ^(PROC_SUB $dir clist);
+//the biggie: functions
+function:	FUNCTION BLANK fname (BLANK? parens)? wspace compound_comm redirect* -> ^(FUNCTION fname compound_comm redirect*)
+	|	fname BLANK? parens wspace compound_comm redirect* -> ^(FUNCTION["function"] fname compound_comm redirect*);
+parens	:	LPAREN BLANK? RPAREN;
 //TOkens
 
 COMMENT

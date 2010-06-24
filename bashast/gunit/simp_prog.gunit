@@ -8,3 +8,13 @@ done
 
 echo \"finding complete\"
 "-> (echo "finding file") (for each (COMMAND_SUB (| ls (grep output))) (echo "I found a file")) (echo "finding complete")
+
+"function quit {
+  exit
+}
+hello () {
+  echo Hello!
+}
+hello
+quit
+echo foo" -> "(function quit (CURRSHELL exit)) (function hello (CURRSHELL (echo Hello!))) hello quit (echo foo)"
