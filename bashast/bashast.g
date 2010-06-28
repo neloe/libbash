@@ -110,7 +110,7 @@ bepart	:	fpath
 	|	brace
 	|	var_ref
 	|	command_sub;
-commasep:	bepart(','! bepart)+;
+commasep:	bepart(COMMA! bepart)+;
 command_sub
 	:	DOLLAR LPAREN BLANK? pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
 	|	TICK BLANK? pipeline BLANK? TICK -> ^(COMMAND_SUB pipeline) ;
@@ -241,7 +241,9 @@ pattern	:	command_sub
 num	:	DIGIT|NUMBER;
 //A rule for filenames
 fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
+	|	QUOTE QUOTE -> FNAME["\"\""]
 	|	nqfname
+	|	num
 	|	NAME
 	|	DOT
 	|	DOTDOT
@@ -250,19 +252,21 @@ fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	TIMES
 	|	BOP
 	|	UOP
-	|	COLON;
+	|	COLON
+	|	PCT
+	|	PCTPCT;
 qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
-	|	(c=BLANK|c=LBRACE|c=RBRACE) b=qfname -> FNAME[$c.text+$b.text]
 	|	fnamepart
-	|	BLANK|LBRACE|RBRACE;
+	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA) b=qfname -> FNAME[$c.text+$b.text]
+	|	BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA;
 nqfname	:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text];
 nqfnamep:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text]
 	|	fnamepart;
 fnamepart
 	:	BANG|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE
 		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE|TEST
-		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS
-		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP;
+		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS|COLON
+		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP|PCT|PCTPCT|POUND|POUNDPOUND;
 fpath	:	a=path_elm b=fpath -> ARG[$a.text+$b.text]
 	|	a=path_elm -> ARG[$a.text];
 path_elm:	fname
@@ -363,6 +367,7 @@ DOUBLE_SEMIC
 	:	';;';
 PIPE	:	'|';
 QUOTE	:	'"';
+COMMA	:	',';
 //Because bash isn't exactly whitespace dependent... need to explicitly handle blanks
 BLANK	:	(' '|'\t')+;
 EOL	:	('\r'?'\n')+ ;

@@ -1,0 +1,12 @@
+gunit bashast;
+
+fname:
+"+%Y%m%d" -> "+%Y%m%d"
+"\"http://dev.gentoo.org/~mpagano/genpatches\"" -> "\"http://dev.gentoo.org/~mpagano/genpatches\""
+"\"\"" -> "\"\""
+"2.7" -> "2.7"
+"\"For more info on this patchset, and how to report problems, see:\"" -> "\"For more info on this patchset, and how to report problems, see:\""
+"\"asdf;!\"" -> "\"asdf;!\""
+"\"$(whoami)\"" -> "\"$(whoami)\""
+"\"`whoami`\"" -> "\"`whoami`\""
+"asdf#" -> "asdf#"
