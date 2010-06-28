@@ -232,9 +232,13 @@ wspace	:	BLANK|EOL;
 semiel	:	(';'|EOL) BLANK?;
 
 //definition of word.  this is just going to grow...
-word	:	command_sub
-	|	brace_expansion
-	|	var_ref;
+word	:	brace_expansion
+	|	command_sub
+	|	var_ref
+	|	fname
+	|	fpath
+	|	num
+	|	str;
 pattern	:	command_sub
 	|	fname
 	|	TIMES;

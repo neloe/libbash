@@ -107,3 +107,24 @@ echo \"file found\"
 done" -> (until (echo true) (echo "file found"))
 "until echo true; do echo \"file found\"; done" -> (until (echo true) (echo "file found"))
 "until echo true`; do echo file done" FAIL
+
+case_expr:
+"case \"$1\" in
+*)
+echo \"Usage: $0 start|stop\" >&2
+exit 3
+;;
+esac" -> (case "$1" (CASE_PATTERN * (echo "Usage: $0 start|stop" (>& 2)) (exit 3)))
+
+"case $asdf in
+a)
+echo \"yay\"
+;;
+esac" -> (case asdf (CASE_PATTERN a (echo "yay")))
+"case asdf in 
+asdf)
+echo \"yay\"
+;;
+esac" -> (case asdf (CASE_PATTERN asdf (echo "yay")))
+"case 1 in 1) echo yay ;; esac" -> (case 1 (CASE_PATTERN 1 (echo yay)))
+"case /usr/bin in 1) echo yay ;; esac" -> (case /usr/bin (CASE_PATTERN 1 (echo yay)))
