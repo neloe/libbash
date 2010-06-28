@@ -49,6 +49,7 @@ tokens{
 	PROC_SUB;
 }
 
+start	:	list;
 list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
 clist	:	list_level_2;
 list_level_1

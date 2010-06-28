@@ -1,6 +1,6 @@
 gunit bashast;
 
-list:
+start:
 "echo \"finding file\"
 for each in `ls | grep output`; do
 echo \"I found a file\"
