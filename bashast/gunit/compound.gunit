@@ -120,7 +120,7 @@ esac" -> (case "$1" (CASE_PATTERN * (echo "Usage: $0 start|stop" (>& 2)) (exit 3
 a)
 echo \"yay\"
 ;;
-esac" -> (case asdf (CASE_PATTERN a (echo "yay")))
+esac" -> (case (VAR_REF asdf) (CASE_PATTERN a (echo "yay")))
 "case asdf in 
 asdf)
 echo \"yay\"
@@ -128,3 +128,11 @@ echo \"yay\"
 esac" -> (case asdf (CASE_PATTERN asdf (echo "yay")))
 "case 1 in 1) echo yay ;; esac" -> (case 1 (CASE_PATTERN 1 (echo yay)))
 "case /usr/bin in 1) echo yay ;; esac" -> (case /usr/bin (CASE_PATTERN 1 (echo yay)))
+"case \"$1\" in
+stop)
+;;
+*)
+echo \"Usage: $0 start|stop\" >&2
+exit 3
+;;
+esac" -> (case "$1" (CASE_PATTERN stop) (CASE_PATTERN * (echo "Usage: $0 start|stop" (>& 2)) (exit 3)))
