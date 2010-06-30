@@ -1,7 +1,15 @@
 gunit bashast;
 
-command:
+start:
 "./hello #comment" -> "./hello"
 "
 #comment
 ./hello" -> "./hello"
+"#!/bin/bash
+#author: Nathan Eloe
+./hello" -> "./hello"
+"#!/bin/bash
+#lots of comments!
+#comment
+./command #comment
+#comment" -> "./command"

@@ -51,7 +51,11 @@ tokens{
 	NEGATION;
 }
 
-start	:	list;
+start	:	(flcomment! EOL!)? EOL!* list;
+flcomment
+	:	BLANK? '#' commentpart*;
+commentpart
+	:	fpath|nqfname|SLASH|BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|PIPE|COMMA|BANG|POUND|QUOTE;
 list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
 clist	:	list_level_2;
 list_level_1
@@ -273,7 +277,8 @@ qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
 	|	fnamepart
 	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA) b=qfname -> FNAME[$c.text+$b.text]
 	|	BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA;
-nqfname	:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text];
+nqfname	:	a=fnamefirstchar b=nqfnamep -> FNAME[$a.text+$b.text];
+
 nqfnamep:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text]
 	|	fnamepart;
 fnamepart
@@ -281,6 +286,11 @@ fnamepart
 		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE|TEST
 		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS|COLON
 		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP|PCT|PCTPCT|POUND|POUNDPOUND;
+fnamefirstchar
+	:	BANG|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE
+		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE|TEST
+		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS|COLON
+		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP|PCT|PCTPCT;
 fpath	:	a=path_elm b=fpath -> ARG[$a.text+$b.text]
 	|	a=path_elm -> ARG[$a.text];
 path_elm:	fname
@@ -326,7 +336,7 @@ parens	:	LPAREN BLANK? RPAREN;
 //TOkens
 
 COMMENT
-    :  (BLANK|EOL) '#' ~('\n'|'\r')* (EOL|EOF){$channel=HIDDEN;}
+    :  (BLANK|EOL) '#' ~('\n'|'\r')* {$channel=HIDDEN;}
     ;
 //Bash "reserved words"
 BANG	:	'!';
