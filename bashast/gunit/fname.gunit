@@ -10,3 +10,6 @@ fname:
 "\"$(whoami)\"" -> "\"$(whoami)\""
 "\"`whoami`\"" -> "\"`whoami`\""
 "asdf#" -> "asdf#"
+"'asdf'" -> "'asdf'"
+"'asdf\"asdf'" -> "'asdf\"asdf'"
+"\"asdf'asdf\"" -> "\"asdf'asdf\""

@@ -260,6 +260,8 @@ num	:	DIGIT|NUMBER;
 //A rule for filenames
 fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	QUOTE QUOTE -> FNAME["\"\""]
+	|	q1=SQUOTE sqf=sqfname q2=SQUOTE -> FNAME[$q1.text+$sqf.text+$q2.text]
+	|	SQUOTE SQUOTE -> FNAME["\"\""]
 	|	nqfname
 	|	num
 	|	NAME
@@ -275,10 +277,13 @@ fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	PCTPCT;
 qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
 	|	fnamepart
-	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA) b=qfname -> FNAME[$c.text+$b.text]
-	|	BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA;
+	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA|c=BANG|c=SQUOTE) b=qfname -> FNAME[$c.text+$b.text]
+	|	BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA|SQUOTE;
+sqfname	:	a=fnamepart sqfn=sqfname -> FNAME[$a.text+$sqfn.text]
+	|	fnamepart
+	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA|c=BANG|c=QUOTE) sqfn=sqfname -> FNAME[$c.text+$sqfn.text]
+	|	BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA|QUOTE;
 nqfname	:	a=fnamefirstchar b=nqfnamep -> FNAME[$a.text+$b.text];
-
 nqfnamep:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text]
 	|	fnamepart;
 fnamepart
@@ -391,6 +396,7 @@ DOUBLE_SEMIC
 	:	';;';
 PIPE	:	'|';
 QUOTE	:	'"';
+SQUOTE	:	'\'';
 COMMA	:	',';
 //Because bash isn't exactly whitespace dependent... need to explicitly handle blanks
 BLANK	:	(' '|'\t')+;
