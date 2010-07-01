@@ -6,7 +6,7 @@ cond_comp:
 "[[-a this/is.afile ]]" FAIL
 "[[
 -a this/is.afile ]]" -> (COMPOUND_COND (-a this/is.afile))
-
+"test ! -a this/is.afile" -> (COMPOUND_COND (NEGATION (-a this/is.afile)))
 arith_comp:
 "((5+3))" -> (COMPOUND_ARITH (+ 5 3))
 "(( 5+3 ))" -> (COMPOUND_ARITH (+ 5 3))

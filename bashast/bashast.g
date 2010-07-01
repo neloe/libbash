@@ -48,6 +48,7 @@ tokens{
 	POST_DECR;
 	PROC_SUB;
 	VAR_REF;
+	NEGATION;
 }
 
 start	:	list;
@@ -202,7 +203,9 @@ cond_expr
 	:	LLSQUARE! wspace! cond wspace! RRSQUARE!
 	|	LSQUARE! wspace! cond wspace! RSQUARE!
 	|	TEST! wspace! cond;
-cond	:	binary_cond
+cond	:	BANG BLANK binary_cond -> ^(NEGATION binary_cond)
+	|	BANG BLANK unary_cond -> ^(NEGATION unary_cond)
+	|	binary_cond
 	|	unary_cond;
 binary_cond
 	:	condpart BLANK!? bstrop^ BLANK!? condpart(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
