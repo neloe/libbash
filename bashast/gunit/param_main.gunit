@@ -33,3 +33,9 @@ var_ref:
 "${foo%bar}" -> (VAR_REF (% foo bar))
 "${foo%%bar}" -> (VAR_REF (%% foo bar))
 "${this/is/pattern}"->(VAR_REF (/ this is pattern))
+//Test positional/special parameters
+"$1" -> (VAR_REF 1)
+"$@" -> (VAR_REF @)
+"$*" -> (VAR_REF *)
+"${@}" -> (VAR_REF @)
+"${3}" -> (VAR_REF 3)

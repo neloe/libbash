@@ -178,17 +178,21 @@ index	:	num
 //Array variables
 var_ref
 	:	DOLLAR LBRACE BLANK? var_exp BLANK? RBRACE -> ^(VAR_REF var_exp)
-	|	DOLLAR NAME -> ^(VAR_REF NAME);
-var_exp	:	NAME WORDOP^ NAME
-	|	NAME COLON os=num (COLON len=num)? -> ^(OFFSET NAME $os ^($len)?)
-	|	BANG^ NAME (TIMES|AT)
-	|	BANG NAME LSQUARE (op=TIMES|op=AT) RSQUARE -> ^(LIST_EXPAND NAME $op)
-	|	POUND^ NAME
-	|	NAME (POUND^|POUNDPOUND^) fpath
-	|	NAME (PCT^|PCTPCT^) fpath
-	|	NAME SLASH^ fname SLASH! fname
+	|	DOLLAR NAME -> ^(VAR_REF NAME)
+	|	DOLLAR num -> ^(VAR_REF num)
+	|	DOLLAR TIMES -> ^(VAR_REF TIMES)
+	|	DOLLAR AT -> ^(VAR_REF AT);
+var_exp	:	var_name WORDOP^ NAME
+	|	var_name COLON os=num (COLON len=num)? -> ^(OFFSET var_name $os ^($len)?)
+	|	BANG^ var_name (TIMES|AT)
+	|	BANG var_name LSQUARE (op=TIMES|op=AT) RSQUARE -> ^(LIST_EXPAND var_name $op)
+	|	POUND^ var_name
+	|	var_name (POUND^|POUNDPOUND^) fpath
+	|	var_name (PCT^|PCTPCT^) fpath
+	|	var_name SLASH^ fname SLASH! fname
 	|	arr_var_ref
-	|	NAME;
+	|	var_name;
+var_name:	num|NAME|TIMES|AT;
 arr_var_ref
 	:	NAME^ LSQUARE! DIGIT+ RSQUARE!;
 //Conditional Expressions
