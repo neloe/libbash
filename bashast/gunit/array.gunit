@@ -4,7 +4,7 @@ var_def:
 "asdf=(a b c d)"->(= asdf (ARRAY a b c d))
 
 var_ref:
-"$asdf" -> "asdf"
-"${asdf[3]}" -> (asdf 3)
-"${asdf[4] }" -> (asdf 4)
-"${asdf}" -> "asdf"
+"$asdf" -> (VAR_REF asdf)
+"${asdf[3]}" -> (VAR_REF (asdf 3))
+"${asdf[4] }" -> (VAR_REF (asdf 4))
+"${asdf}" -> (VAR_REF asdf)

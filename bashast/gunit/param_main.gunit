@@ -18,18 +18,18 @@ along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 gunit bashast;
 
 var_ref:
-"$asdf" -> "asdf"
-"${asdf}" -> "asdf"
-"${asdf:-foo}" -> (:- asdf foo)
-"${bar:7}" -> (OFFSET bar 7)
-"${foo:5:2}" -> (OFFSET foo 5 2)
-"${!asdf*}" -> (! asdf *)
-"${!asdf@}" -> (! asdf @)
-"${!asdf[*]}" -> (LIST_EXPAND asdf *)
-"${!asdf[@]}" -> (LIST_EXPAND asdf @)
-"${#foo}" -> (# foo)
-"${foo#bar}" -> (# foo bar)
-"${foo##bar}" -> (## foo bar)
-"${foo%bar}" -> (% foo bar)
-"${foo%%bar}" -> (%% foo bar)
-"${this/is/pattern}"->(/ this is pattern)
+"$asdf" -> (VAR_REF asdf)
+"${asdf}" -> (VAR_REF asdf)
+"${asdf:-foo}" -> (VAR_REF (:- asdf foo))
+"${bar:7}" -> (VAR_REF (OFFSET bar 7))
+"${foo:5:2}" -> (VAR_REF (OFFSET foo 5 2))
+"${!asdf*}" -> (VAR_REF (! asdf *))
+"${!asdf@}" -> (VAR_REF (! asdf @))
+"${!asdf[*]}" -> (VAR_REF (LIST_EXPAND asdf *))
+"${!asdf[@]}" -> (VAR_REF (LIST_EXPAND asdf @))
+"${#foo}" -> (VAR_REF (# foo))
+"${foo#bar}" -> (VAR_REF (# foo bar))
+"${foo##bar}" -> (VAR_REF (## foo bar))
+"${foo%bar}" -> (VAR_REF (% foo bar))
+"${foo%%bar}" -> (VAR_REF (%% foo bar))
+"${this/is/pattern}"->(VAR_REF (/ this is pattern))

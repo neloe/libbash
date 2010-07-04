@@ -47,6 +47,7 @@ tokens{
 	POST_INCR;
 	POST_DECR;
 	PROC_SUB;
+	VAR_REF;
 }
 
 start	:	list;
@@ -176,8 +177,8 @@ index	:	num
 	|	NAME;
 //Array variables
 var_ref
-	:	DOLLAR! LBRACE! BLANK!? var_exp BLANK!? RBRACE!
-	|	DOLLAR!NAME;
+	:	DOLLAR LBRACE BLANK? var_exp BLANK? RBRACE -> ^(VAR_REF var_exp)
+	|	DOLLAR NAME -> ^(VAR_REF NAME);
 var_exp	:	NAME WORDOP^ NAME
 	|	NAME COLON os=num (COLON len=num)? -> ^(OFFSET NAME $os ^($len)?)
 	|	BANG^ NAME (TIMES|AT)
