@@ -12,18 +12,18 @@ arith_comp:
 "(( 5+3 ))" -> (COMPOUND_ARITH (+ 5 3))
 
 currshell:
-"{ time cat; }" -> (CURRSHELL (cat time))
+"{ time cat; }" -> (CURRSHELL (LIST (cat time)))
 "{ time cat
-}" -> (CURRSHELL (cat time))
+}" -> (CURRSHELL (LIST (cat time)))
 "{time cat}" FAIL
 "{ time cat }" FAIL
 
 subshell:
-"(time cat)" -> (SUBSHELL (cat time))
-"(time cat )" ->(SUBSHELL (cat time))
-"( time cat)" -> (SUBSHELL (cat time))
+"(time cat)" -> (SUBSHELL (LIST (cat time)))
+"(time cat )" ->(SUBSHELL (LIST (cat time)))
+"( time cat)" -> (SUBSHELL (LIST (cat time)))
 "( time cat;
-)" -> (SUBSHELL (cat time))
+)" -> (SUBSHELL (LIST (cat time)))
 
 case_expr:
 "case `echo asdf` in
@@ -38,7 +38,7 @@ echo three
 ;;
 *) echo woo
 ;;
-esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz (echo yay)) (CASE_PATTERN bzip (echo three)) (CASE_PATTERN * (echo woo)))
+esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz (LIST (echo yay))) (CASE_PATTERN bzip (LIST (echo three))) (CASE_PATTERN * (LIST (echo woo))))
 
 "case `echo asdf` in
 	gz)
@@ -48,43 +48,43 @@ esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz (echo yay)) (CASE_PATT
 		echo three
 		;;
 	*) echo woo
-esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz (echo yay)) (CASE_PATTERN bzip (echo three)) (CASE_PATTERN * (echo woo)))
+esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz (LIST (echo yay))) (CASE_PATTERN bzip (LIST (echo three))) (CASE_PATTERN * (LIST (echo woo))))
 
 "case `echo asdf` in gz|asdf) echo yay ;; bzip) echo three ;; *) echo woo esac" FAIL
-"case `echo asdf` in gz|asdf) echo yay ;; bzip) echo three ;; *) echo woo ;; esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz asdf (echo yay)) (CASE_PATTERN bzip (echo three)) (CASE_PATTERN * (echo woo)))
+"case `echo asdf` in gz|asdf) echo yay ;; bzip) echo three ;; *) echo woo ;; esac" -> (case (COMMAND_SUB (echo asdf)) (CASE_PATTERN gz asdf (LIST (echo yay))) (CASE_PATTERN bzip (LIST (echo three))) (CASE_PATTERN * (LIST (echo woo))))
 
 for_expr:
 "for each in `ls |grep log`; do
 	echo \"file found\"
-done" -> (for each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
-"for each in `ls |grep log`; do echo \"file found\"; done" -> (for each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
+done" -> (for each (COMMAND_SUB (| ls (grep log))) (LIST (echo "file found")))
+"for each in `ls |grep log`; do echo \"file found\"; done" -> (for each (COMMAND_SUB (| ls (grep log))) (LIST (echo "file found")))
 "for each in `ls |grep log`; do echo file done" FAIL
 
-"for ((5+3;5+3;5+3)); do echo yay; done" -> (for (FOR_INIT (+ 5 3)) (FOR_COND (+ 5 3)) (FOR_MOD (+ 5 3)) (echo yay))
-"for ((5+3; ;5+3)); do echo yay; done" -> (for (FOR_INIT (+ 5 3)) (FOR_MOD (+ 5 3)) (echo yay))
-"for ((;5+3 ;5+3)); do echo yay; done" -> (for (FOR_COND (+ 5 3)) (FOR_MOD (+ 5 3)) (echo yay))
-"for ((5+3;;5+3)); do echo yay; done" -> (for (FOR_INIT (+ 5 3)) (FOR_MOD (+ 5 3)) (echo yay))
+"for ((5+3;5+3;5+3)); do echo yay; done" -> (for (FOR_INIT (+ 5 3)) (FOR_COND (+ 5 3)) (FOR_MOD (+ 5 3)) (LIST (echo yay)))
+"for ((5+3; ;5+3)); do echo yay; done" -> (for (FOR_INIT (+ 5 3)) (FOR_MOD (+ 5 3)) (LIST (echo yay)))
+"for ((;5+3 ;5+3)); do echo yay; done" -> (for (FOR_COND (+ 5 3)) (FOR_MOD (+ 5 3)) (LIST (echo yay)))
+"for ((5+3;;5+3)); do echo yay; done" -> (for (FOR_INIT (+ 5 3)) (FOR_MOD (+ 5 3)) (LIST (echo yay)))
 
 
 sel_expr:
 "select each in `ls |grep log`; do
   echo \"file found\"
-	done" -> (select each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
-	"select each in `ls |grep log`; do echo \"file found\"; done" -> (select each (COMMAND_SUB (| ls (grep log))) (echo "file found"))
+	done" -> (select each (COMMAND_SUB (| ls (grep log))) (LIST (echo "file found")))
+"select each in `ls |grep log`; do echo \"file found\"; done" -> (select each (COMMAND_SUB (| ls (grep log))) (LIST (echo "file found")))
 "select each in `ls |grep log`; do echo file done" FAIL
 
 if_expr:
 "if echo yay2; then
 echo yay
-fi" -> (if (echo yay2) (echo yay))
-"if echo yay2; then echo yay ;fi" -> (if (echo yay2) (echo yay))
+fi" -> (if (LIST (echo yay2)) (LIST (echo yay)))
+"if echo yay2; then echo yay ;fi" -> (if (LIST (echo yay2)) (LIST (echo yay)))
 "if echo yay2 then echo yay; fi" FAIL
 
 "if echo yay2; then
 echo yay
 elif echo yay3; then
 echo boo
-fi" -> (if (echo yay2) (echo yay) (if (echo yay3) (echo boo)))
+fi" -> (if (LIST (echo yay2)) (LIST (echo yay)) (if (LIST (echo yay3)) (LIST (echo boo))))
 
 "if echo yay2; then
 echo yay
@@ -92,20 +92,20 @@ elif echo yay3; then
 echo boo
 elif echo yay4; then echo hurrah
 else echo darn
-fi" -> (if (echo yay2) (echo yay) (if (echo yay3) (echo boo)) (if (echo yay4) (echo hurrah)) (echo darn))
+fi" -> (if (LIST (echo yay2)) (LIST (echo yay)) (if (LIST (echo yay3)) (LIST (echo boo))) (if (LIST (echo yay4)) (LIST (echo hurrah))) (LIST (echo darn)))
 
 while_expr:
 "while echo true; do
 echo \"file found\"
-done" -> (while (echo true) (echo "file found"))
-"while echo true; do echo \"file found\"; done" -> (while (echo true) (echo "file found"))
+done" -> (while (LIST (echo true)) (LIST (echo "file found")))
+"while echo true; do echo \"file found\"; done" -> (while (LIST (echo true)) (LIST (echo "file found")))
 "while echo true`; do echo file done" FAIL
 
 until_expr:
 "until echo true; do
 echo \"file found\"
-done" -> (until (echo true) (echo "file found"))
-"until echo true; do echo \"file found\"; done" -> (until (echo true) (echo "file found"))
+done" -> (until (LIST (echo true)) (LIST (echo "file found")))
+"until echo true; do echo \"file found\"; done" -> (until (LIST (echo true)) (LIST (echo "file found")))
 "until echo true`; do echo file done" FAIL
 
 case_expr:
@@ -114,20 +114,20 @@ case_expr:
 echo \"Usage: $0 start|stop\" >&2
 exit 3
 ;;
-esac" -> (case "$1" (CASE_PATTERN * (echo "Usage: $0 start|stop" (>& 2)) (exit 3)))
+esac" -> (case "$1" (CASE_PATTERN * (LIST (echo "Usage: $0 start|stop" (>& 2)) (exit 3))))
 
 "case $asdf in
 a)
 echo \"yay\"
 ;;
-esac" -> (case (VAR_REF asdf) (CASE_PATTERN a (echo "yay")))
+esac" -> (case (VAR_REF asdf) (CASE_PATTERN a (LIST (echo "yay"))))
 "case asdf in 
 asdf)
 echo \"yay\"
 ;;
-esac" -> (case asdf (CASE_PATTERN asdf (echo "yay")))
-"case 1 in 1) echo yay ;; esac" -> (case 1 (CASE_PATTERN 1 (echo yay)))
-"case /usr/bin in 1) echo yay ;; esac" -> (case /usr/bin (CASE_PATTERN 1 (echo yay)))
+esac" -> (case asdf (CASE_PATTERN asdf (LIST (echo "yay"))))
+"case 1 in 1) echo yay ;; esac" -> (case 1 (CASE_PATTERN 1 (LIST (echo yay))))
+"case /usr/bin in 1) echo yay ;; esac" -> (case /usr/bin (CASE_PATTERN 1 (LIST (echo yay))))
 "case \"$1\" in
 stop)
 ;;
@@ -135,4 +135,4 @@ stop)
 echo \"Usage: $0 start|stop\" >&2
 exit 3
 ;;
-esac" -> (case "$1" (CASE_PATTERN stop) (CASE_PATTERN * (echo "Usage: $0 start|stop" (>& 2)) (exit 3)))
+esac" -> (case "$1" (CASE_PATTERN stop) (CASE_PATTERN * (LIST (echo "Usage: $0 start|stop" (>& 2)) (exit 3))))

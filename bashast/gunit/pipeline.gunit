@@ -8,4 +8,4 @@ pipeline:
 "time -p cat file |grep search >> log" -> (| (cat file (time -p)) (grep search (>> log)))
 "if time cat; then
 echo \"three\"
-fi" -> (if (cat time) (echo "three"))
+fi" -> (if (LIST (cat time)) (LIST (echo "three")))

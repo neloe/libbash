@@ -7,7 +7,7 @@ echo \"I found a file\"
 done
 
 echo \"finding complete\"
-"-> (echo "finding file") (for each (COMMAND_SUB (| ls (grep output))) (echo "I found a file")) (echo "finding complete")
+"-> (LIST (echo "finding file") (for each (COMMAND_SUB (| ls (grep output))) (LIST (echo "I found a file"))) (echo "finding complete"))
 
 "function quit {
   exit
@@ -17,4 +17,4 @@ hello () {
 }
 hello
 quit
-echo foo" -> "(function quit (CURRSHELL exit)) (function hello (CURRSHELL (echo Hello!))) hello quit (echo foo)"
+echo foo" -> (LIST (function quit (CURRSHELL (LIST exit))) (function hello (CURRSHELL (LIST (echo Hello!)))) hello quit (echo foo))

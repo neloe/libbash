@@ -2,6 +2,8 @@ gunit bashast;
 
 var_def:
 "asdf=(a b c d)"->(= asdf (ARRAY a b c d))
+"asdf=(`echo 6` b c d)"->(= asdf (ARRAY (COMMAND_SUB (echo 6)) b c d))
+"asdf=(${P} b c d)"->(= asdf (ARRAY (VAR_REF P) b c d))
 
 var_ref:
 "$asdf" -> (VAR_REF asdf)

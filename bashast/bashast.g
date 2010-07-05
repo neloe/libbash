@@ -49,24 +49,27 @@ tokens{
 	PROC_SUB;
 	VAR_REF;
 	NEGATION;
+	LIST;
+	REPLACE_FIRST;
 }
 
-start	:	(flcomment! EOL!)? EOL!* list;
+start	:	(flcomment! EOL!)? EOL!* list^;
 flcomment
 	:	BLANK? '#' commentpart*;
 commentpart
-	:	fpath|nqfname|SLASH|BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|PIPE|COMMA|BANG|POUND|QUOTE;
-list	:	list_level_2 BLANK!? (';'!|'&'^|EOL!)?;
-clist	:	list_level_2;
+	:	fpath|nqfname|SLASH|BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|PIPE|COMMA|BANG|POUND|QUOTE|COMMA|'<'|'>';
+list	:	list_level_2 BLANK? (';'|'&'|EOL)? -> ^(LIST list_level_2);
+clist	:	list_level_2 -> ^(LIST list_level_2);
 list_level_1
 	:	(function|pipeline) (BLANK!?('&&'^|'||'^)BLANK!? (function|pipeline))*;
 list_level_2
 	:	list_level_1 ((BLANK!?';'!|BLANK!?'&'^|(BLANK!? EOL!)+)BLANK!? list_level_1)*;
 pipeline
-	:	time?('!' BLANK!)? BLANK!? command^ (BLANK!?PIPE^ BLANK!? command)*;
+	:	var_def+
+	|	time?('!' BLANK!)? BLANK!? command^ (BLANK!?PIPE^ BLANK!? command)*;
 time	:	TIME^ BLANK! timearg?;
 timearg	:	'-p' BLANK!;
-command	:	var_def+
+command	:	EXPORT^ var_def+
 	|	simple_command
 	|	compound_comm;
 simple_command
@@ -172,14 +175,21 @@ cond_comp
 //Variables
 var_def	:	BLANK? NAME LSQUARE BLANK? index BLANK? RSQUARE EQUALS value BLANK? -> ^(EQUALS ^(NAME  index) value)
 	|	BLANK!? NAME EQUALS^ value BLANK!?
-	|	BLANK!? 'l'!'e'!'t'! NAME EQUALS^ arithmetic BLANK!?;
+	|	BLANK!? LET! NAME EQUALS^ arithmetic BLANK!?;
 value	:	DIGIT
 	|	NUMBER
+	|	var_ref
 	|	fpath
-	|	LPAREN! BLANK!? arr_val RPAREN!;
-arr_val	:	(BLANK? ag+=val)* -> ^(ARRAY $ag+);
-val	:	'['!BLANK!?index BLANK!?']'!EQUALS^ fpath
-	|	fpath;
+	|	LPAREN! wspace!? arr_val RPAREN!;
+arr_val	:
+	|	(ag+=val wspace?)+ -> ^(ARRAY $ag+);
+val	:	'['!BLANK!?index BLANK!?']'!EQUALS^ pos_val
+	|	pos_val;
+pos_val	: command_sub
+	|	var_ref
+	|	num
+	|	fname;
+
 index	:	num
 	|	NAME;
 //Array variables
@@ -196,7 +206,7 @@ var_exp	:	var_name WORDOP^ NAME
 	|	POUND^ var_name
 	|	var_name (POUND^|POUNDPOUND^) fpath
 	|	var_name (PCT^|PCTPCT^) fpath
-	|	var_name SLASH^ fname SLASH! fname
+	|	var_name SLASH patt=fname SLASH string=fname -> ^(REPLACE_FIRST var_name $patt $string)
 	|	arr_var_ref
 	|	var_name;
 var_name:	num|NAME|TIMES|AT;
@@ -215,14 +225,15 @@ binary_cond
 	:	condpart BLANK!? bstrop^ BLANK!? condpart(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
 	|	num BLANK! BOP^ BLANK! num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?;
 bstrop	:	BOP
+	|	EQUALS EQUALS -> OP["=="]
 	|	EQUALS
 	|	BANG EQUALS -> OP["!="]
-	|	EQUALS EQUALS -> OP["=="]
 	|	'<'
 	|	'>';
 unary_cond
 	:	UOP^ BLANK! condpart;
 condpart:	brace_expansion
+	|	var_ref
 	|	str
 	|	fpath
 	|	arithmetic;
@@ -240,7 +251,9 @@ str	:	CASE
 	|	SELECT
 	|	THEN
 	|	UNTIL
-	|	WHILE;
+	|	WHILE
+	|	EXPORT
+	|	LET;
 //Rules for tokens.
 wspace	:	BLANK|EOL;
 semiel	:	(';'|EOL) BLANK?;
@@ -274,31 +287,35 @@ fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	UOP
 	|	COLON
 	|	PCT
-	|	PCTPCT;
+	|	PCTPCT
+	|	EXPORT
+	|	LET
+	|	MINUS;
 qfname	:	a=fnamepart b=qfname -> FNAME[$a.text+$b.text]
 	|	fnamepart
-	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA|c=BANG|c=SQUOTE) b=qfname -> FNAME[$c.text+$b.text]
-	|	BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA|SQUOTE;
+	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA|c=SQUOTE|c=AMP|c='<'|c='>') b=qfname -> FNAME[$c.text+$b.text]
+	|	BLANK|LBRACE|RBRACE|SLASH|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA|SQUOTE|AMP|'<'|'>';
 sqfname	:	a=fnamepart sqfn=sqfname -> FNAME[$a.text+$sqfn.text]
 	|	fnamepart
-	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA|c=BANG|c=QUOTE) sqfn=sqfname -> FNAME[$c.text+$sqfn.text]
-	|	BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA|QUOTE;
+	|	(c=BLANK|c=LBRACE|c=RBRACE|c=SLASH|c=SEMIC|c=DOUBLE_SEMIC|c=TICK|c=EOL|c=LPAREN|c=LLPAREN|c=RPAREN|c=RRPAREN|c=PIPE|c=COMMA|c=QUOTE|c=AMP|c='<'|c='>') sqfn=sqfname -> FNAME[$c.text+$sqfn.text]
+	|	BLANK|LBRACE|RBRACE|SLASH|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|EOL|PIPE|COMMA|QUOTE|AMP|'<'|'>';
 nqfname	:	a=fnamefirstchar b=nqfnamep -> FNAME[$a.text+$b.text];
 nqfnamep:	a=fnamepart b=nqfnamep -> FNAME[$a.text+$b.text]
 	|	fnamepart;
 fnamepart
 	:	BANG|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE
 		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE|TEST
-		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS|COLON
-		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP|PCT|PCTPCT|POUND|POUNDPOUND;
+		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS|COLON|LET
+		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP|PCT|PCTPCT|POUND|POUNDPOUND|EXPORT|CASE;
 fnamefirstchar
 	:	BANG|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE
 		|TIME|LLSQUARE|RRSQUARE|LSQUARE|RSQUARE|DOTDOT|TILDE|TEST
-		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS|COLON
-		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP|PCT|PCTPCT;
+		|DOLLAR|AT|TIMES|MINUS|OTHER|DOT|NAME|NUMBER|DIGIT|EQUALS|COLON|LET
+		|INC|DEC|PLUS|EXP|LEQ|GEQ|CARET|BOP|UOP|PCT|PCTPCT|EXPORT|CASE;
 fpath	:	a=path_elm b=fpath -> ARG[$a.text+$b.text]
 	|	a=path_elm -> ARG[$a.text];
 path_elm:	fname
+	|	var_ref
 	|	SLASH;
 //Arithmetic expansion
 arithmetic
@@ -379,6 +396,7 @@ AT	:	'@';
 DOT	:	'.';
 DOTDOT	:	'..';
 //Arith ops
+LET	:	'let';
 TIMES	:	'*';
 EQUALS	:	'=';
 MINUS	:	'-';
@@ -426,6 +444,8 @@ LOGICAND
 LOGICOR	:	'||';
 BOP	:	MINUS LETTER LETTER;
 UOP	:	MINUS LETTER;
+//Some builtins
+EXPORT	:	'export';
 //Tokens for strings
 NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
 OTHER	:	.;

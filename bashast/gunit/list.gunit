@@ -1,21 +1,21 @@
 gunit bashast;
 
 list:
-"make" -> "make"
-"make && make modules_install;" -> (&& make (make modules_install))
-"make && make modules_install &" -> (& (&& make (make modules_install)))
-"cd /usr/bin; ls -al |grep more&& cp ./less ./more" -> (cd /usr/bin) (&& (| (ls -al) (grep more)) (cp ./less ./more))
+"make" -> (LIST make)
+"make && make modules_install;" -> (LIST (&& make (make modules_install)))
+"make && make modules_install &" -> (LIST (&& make (make modules_install)))
+"cd /usr/bin; ls -al |grep more&& cp ./less ./more" -> (LIST (cd /usr/bin) (&& (| (ls -al) (grep more)) (cp ./less ./more)))
 "mkdir test
 cd test
 cp ../asdf.tar.gz .
-tar xpf asdf.tar.gz" -> (mkdir test) (cd test) (cp ../asdf.tar.gz .) (tar xpf asdf.tar.gz)
+tar xpf asdf.tar.gz" -> (LIST (mkdir test) (cd test) (cp ../asdf.tar.gz .) (tar xpf asdf.tar.gz))
 "mkdir build && cd build
-./configure && make" -> (&& (mkdir build) (cd build)) (&& ./configure make)
+./configure && make" -> (LIST (&& (mkdir build) (cd build)) (&& ./configure make))
 "make;make modules_install
 
 
-cp arch/x86_64/boot/bzImage /boot/kernel" -> "make (make modules_install) (cp arch/x86_64/boot/bzImage /boot/kernel)"
+cp arch/x86_64/boot/bzImage /boot/kernel" -> (LIST make (make modules_install) (cp arch/x86_64/boot/bzImage /boot/kernel))
 
 "a=asdf
 b=three
-echo \"a b\"" -> (= a asdf) (= b three) (echo "a b")
+echo \"a b\"" -> (LIST (= a asdf) (= b three) (echo "a b"))

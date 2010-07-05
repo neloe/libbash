@@ -3,10 +3,10 @@ gunit bashast;
 function:
 "function quit {
 	exit
-}" -> (function quit (CURRSHELL exit))
+}" -> (function quit (CURRSHELL (LIST exit)))
 
 "function quit{ exit; }" FAIL
 "function quit { exit }" FAIL
-"function quit { exit; }" -> (function quit (CURRSHELL exit))
-"function foo() { :; }" -> (function foo (CURRSHELL :))
-"foo() { :; }" -> (function foo (CURRSHELL :))
+"function quit { exit; }" -> (function quit (CURRSHELL (LIST exit)))
+"function foo() { :; }" -> (function foo (CURRSHELL (LIST :)))
+"foo() { :; }" -> (function foo (CURRSHELL (LIST :)))
