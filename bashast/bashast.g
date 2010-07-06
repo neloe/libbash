@@ -51,6 +51,7 @@ tokens{
 	NEGATION;
 	LIST;
 	REPLACE_FIRST;
+	REPLACE_ALL;
 }
 
 start	:	(flcomment! EOL!)? EOL!* list^;
@@ -198,7 +199,12 @@ var_ref
 	|	DOLLAR NAME -> ^(VAR_REF NAME)
 	|	DOLLAR num -> ^(VAR_REF num)
 	|	DOLLAR TIMES -> ^(VAR_REF TIMES)
-	|	DOLLAR AT -> ^(VAR_REF AT);
+	|	DOLLAR AT -> ^(VAR_REF AT)
+	|	DOLLAR POUND -> ^(VAR_REF POUND)
+	|	DOLLAR QMARK -> ^(VAR_REF QMARK)
+	|	DOLLAR MINUS -> ^(VAR_REF MINUS)
+	|	DOLLAR BANG -> ^(VAR_REF BANG)
+	|	DOLLAR '_' -> ^(VAR_REF '_');
 var_exp	:	var_name WORDOP^ NAME
 	|	var_name COLON os=num (COLON len=num)? -> ^(OFFSET var_name $os ^($len)?)
 	|	BANG^ var_name (TIMES|AT)
@@ -207,6 +213,9 @@ var_exp	:	var_name WORDOP^ NAME
 	|	var_name (POUND^|POUNDPOUND^) fpath
 	|	var_name (PCT^|PCTPCT^) fpath
 	|	var_name SLASH patt=fname SLASH string=fname -> ^(REPLACE_FIRST var_name $patt $string)
+	|	var_name SLASH fname SLASH? -> ^(REPLACE_FIRST var_name fname) 
+	|	var_name SLASH SLASH patt=fname SLASH string=fname -> ^(REPLACE_ALL var_name$patt $string)
+	|	var_name SLASH SLASH patt=fname SLASH? -> ^(REPLACE_ALL var_name $patt)
 	|	arr_var_ref
 	|	var_name;
 var_name:	num|NAME|TIMES|AT;
@@ -277,6 +286,7 @@ fname	:	q1=QUOTE a=qfname q2=QUOTE -> FNAME[$q1.text+$a.text+$q2.text]
 	|	SQUOTE SQUOTE -> FNAME["\"\""]
 	|	nqfname
 	|	num
+	|	'_'
 	|	NAME
 	|	DOT
 	|	DOTDOT
@@ -437,6 +447,7 @@ PCTPCT	:	'%%';
 SLASH	:	'/';
 WORDOP	:	(':-'|':='|':?'|':+');
 COLON	:	':';
+QMARK	:	'?';
 //Operators for conditional statements
 TEST	:	'test';
 LOGICAND
