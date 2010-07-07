@@ -1,11 +1,11 @@
 gunit bashast;
 
 pipeline:
-"cat asdf" -> (cat asdf)
-"time -p cat file" -> (cat file (time -p))
-"time cat file | grep search" -> (| (cat file time) (grep search))
-"time -p cat | grep asdf | a.out" -> (| (| (cat (time -p)) (grep asdf)) a.out)
-"time -p cat file |grep search >> log" -> (| (cat file (time -p)) (grep search (>> log)))
+"cat asdf" -> (COMMAND (STRING cat) (STRING asdf))
+"time -p cat file" -> (COMMAND (STRING cat) (STRING file) (time -p))
+"time cat file | grep search" -> (| (COMMAND (STRING cat) (STRING file) time) (COMMAND (STRING grep) (STRING search)))
+"time -p cat | grep asdf | a.out" -> (| (| (COMMAND (STRING cat) (time -p)) (COMMAND (STRING grep) (STRING asdf))) (COMMAND (STRING a.out)))
+"time -p cat file |grep search >> log" -> (| (COMMAND (STRING cat) (STRING file) (time -p)) (COMMAND (STRING grep) (STRING search) (>> (STRING log))))
 "if time cat; then
 echo \"three\"
-fi" -> (if (LIST (cat time)) (LIST (echo "three")))
+fi" -> (if (LIST (COMMAND (STRING cat) time)) (LIST (COMMAND (STRING echo) (STRING three))))

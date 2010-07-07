@@ -1,13 +1,13 @@
 gunit bashast;
 
 brace:
-"{a,b}"-> (BRACE a b)
-"{a,b,c}" -> (BRACE a b c)
+"{a,b}"-> (BRACE (STRING a) (STRING b))
+"{a,b,c}" -> (BRACE (STRING a) (STRING b) (STRING c))
 "{a..d}" -> (BRACE (.. a d))
-"{{a,b},c,d}" -> (BRACE (BRACE a b) c d)
+"{{a,b},c,d}" -> (BRACE (BRACE (STRING a) (STRING b)) (STRING c) (STRING d))
 
 brace_expansion:
-"{a,b}" -> (BRACE_EXP (BRACE a b))
-"a{b,c}" -> (BRACE_EXP a (BRACE b c))
-"{c..d}f" -> (BRACE_EXP (BRACE (.. c d)) f)
-"z{{a,b},c}" -> (BRACE_EXP z (BRACE (BRACE a b) c))
+"{a,b}" -> (BRACE_EXP (BRACE (STRING a) (STRING b)))
+"a{b,c}" -> (BRACE_EXP (STRING a) (BRACE (STRING b) (STRING c)))
+"{c..d}f" -> (BRACE_EXP (BRACE (.. c d)) (STRING f))
+"z{{a,b},c}" -> (BRACE_EXP (STRING z) (BRACE (BRACE (STRING a) (STRING b)) (STRING c)))

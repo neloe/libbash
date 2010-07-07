@@ -1,15 +1,20 @@
 gunit bashast;
 
 fname:
-"+%Y%m%d" -> "+%Y%m%d"
-"\"http://dev.gentoo.org/~mpagano/genpatches\"" -> "\"http://dev.gentoo.org/~mpagano/genpatches\""
-"\"\"" -> "\"\""
-"2.7" -> "2.7"
-"\"For more info on this patchset, and how to report problems, see:\"" -> "\"For more info on this patchset, and how to report problems, see:\""
-"\"asdf;!\"" -> "\"asdf;!\""
-"\"$(whoami)\"" -> "\"$(whoami)\""
-"\"`whoami`\"" -> "\"`whoami`\""
-"asdf#" -> "asdf#"
-"'asdf'" -> "'asdf'"
-"'asdf\"asdf'" -> "'asdf\"asdf'"
-"\"asdf'asdf\"" -> "\"asdf'asdf\""
+"+%Y%m%d" -> (STRING +%Y%m%d)
+"\"http://dev.gentoo.org/~mpagano/genpatches\"" -> (STRING http://dev.gentoo.org/~mpagano/genpatches)
+"\"\"" -> "STRING"
+"2.7" -> (STRING 2.7)
+"\"For more info on this patchset, and how to report problems, see:\"" -> (STRING For more info on this patchset, and how to report problems, see:)
+"\"asdf;!\"" -> (STRING asdf;!)
+"\"$(whoami)\"" -> (STRING (COMMAND_SUB (COMMAND (STRING whoami))))
+"\"`whoami`\"" -> (STRING (COMMAND_SUB (COMMAND (STRING whoami))))
+"'`whoami`'" -> (STRING `whoami`)
+"'$(whoami)'" -> (STRING $(whoami))
+"\"${P}\"" -> (STRING (VAR_REF P))
+"'${P}'" -> (STRING ${P})
+"asdf#" -> (STRING asdf#)
+"'asdf'" -> (STRING asdf)
+"'asdf\"asdf'" -> (STRING asdf"asdf)
+"\"asdf'asdf\"" -> (STRING asdf'asdf)
+"!/bin/bash" -> (STRING !/bin/bash)

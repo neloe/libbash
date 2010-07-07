@@ -19,19 +19,19 @@ along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 gunit bashast;
 
 redirect:
-">output_file" -> (> output_file)
-"1>output.file" -> (1> output.file)
+">output_file" -> (> (STRING output_file))
+"1>output.file" -> (1> (STRING output.file))
 "2>&1" -> (2>& 1)
-">> /this/is/append" -> (>> /this/is/append)
-"&> allout" -> (&> allout)
-"< this.is.1input" -> (< this.is.1input)
-"3< \"input from file\"" -> (3< "input from file")
+">> /this/is/append" -> (>> (STRING /this/is/append))
+"&> allout" -> (&> (STRING allout))
+"< this.is.1input" -> (< (STRING this.is.1input))
+"3< \"input from file\"" -> (3< (STRING input from file))
 "2<&0" -> (2<& 0)
 "<< asdf
 asdf
-" -> (<< asdf asdf)
-"<<< herestring" -> (<<< herestring)
+" -> (<< (STRING asdf) (STRING asdf))
+"<<< herestring" -> (<<< (STRING herestring))
 "<< blue
 red
 green
-" -> (<< blue red green)
+" -> (<< (STRING blue) (STRING red) (STRING green))

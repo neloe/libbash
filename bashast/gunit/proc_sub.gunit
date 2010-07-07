@@ -1,5 +1,5 @@
 gunit bashast;
 
 proc_sub:
-"<( true )" -> (PROC_SUB < (LIST true))
-">(false)" -> (PROC_SUB > (LIST false))
+"<( true )" -> (PROC_SUB < (LIST (COMMAND (STRING true))))
+">(false)" -> (PROC_SUB > (LIST (COMMAND (STRING false))))
