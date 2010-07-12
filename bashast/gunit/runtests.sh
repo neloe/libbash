@@ -39,18 +39,18 @@ function rtest {
 			freason="Compilation failure"
 		fi
 	fi
-	java org.antlr.gunit.Interp $SCRIPTDIR/$1 > $grammar.output
-	failed=`cat $grammar.output|grep "Failures:"|awk -F: '{print $3}'|awk '{print $1}'`
+	java org.antlr.gunit.Interp $SCRIPTDIR/$1 > $1.output
+	failed=`cat $1.output|grep "Failures:"|awk -F: '{print $3}'|awk '{print $1}'`
 
 	if [[ $freason == "" && failed -ne '0' ]]; then
 		freason="Unit test failure"
 	fi
-	if [[ $freason != "" ]]; then
-		echo "Test failed"
-		let failedtests=failedtests+1
+	if [[ $freason == "" ]]; then
+		printf "\e[0;0m$1:\e[0;32m passed\e[0;0m\n"
+		rm $1.output
 	else
-		echo "Test Passed"
-		rm $grammar.output
+		printf "\e[0;0m$1:\e[0;31m fail\e[0m: $freason\n"
+		((failedtests++))
 	fi
 }
 
@@ -75,9 +75,18 @@ else
 			echo "gunit file not found: $gtest"
 		fi
 	done
+	cat $SCRIPTDIR/*.output 2> /dev/null
+	rm $SCRIPTDIR/*.output 2> /dev/null
 fi
-cat *.output 2> /dev/null
-rm *.output 2> /dev/null
+if [[ $# -gt 0 ]]; then
+	testsrun=$#
+else
+	testsrun=`ls $SCRIPTDIR | grep gunit | wc -l`
+fi
+echo "==========================="
+printf "Test summary:\n\e[0;32mPass:\e[0;0m $(($testsrun-$failedtests))\n\e[0;31mFail: \e[0;0m$failedtests\n"
+
+rm $SCRIPTDIR/*.output 2> /dev/null
 rm $SCRIPTDIR/*.java 2> /dev/null
 rm $SCRIPTDIR/*.class 2> /dev/null
 rm $SCRIPTDIR/*.tokens 2> /dev/null
