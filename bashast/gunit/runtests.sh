@@ -55,16 +55,16 @@ function rtest {
 }
 
 #Get the directory of the script
-SCRIPTDIR=.
-#first, set up the classpath
+SCRIPTDIR=`dirname $0`
+#set up the classpath
 if type -p java-config > /dev/null; then
-	export CLASSPATH=".:$(java-config -dp antlr-3)"
+	export CLASSPATH=".:$SCRIPTDIR:$(java-config -dp antlr-3)"
 else
-	export CLASSPATH=".:/usr/share/java/antlr-3.2.jar:/Users/squishy/ANTLR/antlr.jar"
+	export CLASSPATH=".:$SCRIPTDIR:/usr/share/java/antlr-3.2.jar:/Applications/ANTLRWorks.app/Contents/Resources/Java/antlrworks.jar"
 fi
 
 if [[ $# -eq 0  ]]; then
-	for gtest in `ls |grep gunit`; do
+	for gtest in `ls ${SCRIPTDIR}|grep gunit`; do
 		rtest $gtest
 	done
 else
