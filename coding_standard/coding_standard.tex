@@ -1,0 +1,138 @@
+\documentclass[letterpaper,10pt]{article}
+\usepackage{url}
+
+%opening/title
+\title{libbash Coding Standard}
+\author{Nathan Eloe}
+\date{\today}
+
+\begin{document}
+\maketitle
+\section{Introduction and Acknowledgements}
+The majority of the coding styles in this document can be found at \url{http://www.mst.edu/~cpp/cpp_coding_standard_v1_1.pdf}.  Minor changes have been made to the standard outlined there for personal preference and consistency.
+\section{Commit Messages}
+Commit messages should contain a brief (50 characters or less) description in the first line, followed by a more verbose and explanatory statement.  The title explanation should have normal sentence capitalization, and the explanatory statements should use proper English grammar.
+\section{File Names}
+Files must be named descriptively.  Files that will be included should be indicative of the functionality they provide.  If the file provides a class, the name of the file and class should match.  The names of header and implementation files (in the case of a class) should match.
+\subsection{File Extensions}
+The following extensions will be used:\\
+Header files: .h\\
+Implementation files: .cpp\\
+Templated implementation files: .hpp
+\section{Project Files}
+Code must be split into two types of files: header files and implementation files.  Header files may contain no implementation except functions that may be implemented in one line/command, for example accessor/mutator functions.\\
+Implementation and header names must match.  A class prototyped in the file foobar.h must be implemented in foobar.cpp or foobar.hpp.\\
+\subsection{Header files}
+Header files must contain the appropriate ifndef header guard:
+\begin{verbatim}
+#ifndef FILENAME_H
+#define FILENAME_H
+
+/* 
+code
+*/
+
+#endif
+\end{verbatim}
+\subsection{Implementation Files}
+Implementation files will NEVER be included by another file.  Files with the extension .hpp should only be included at the end of the header file of the templated class they are implementing.
+\section{Comments}
+\subsection{File comments}
+At the top of every file that has not been automatically generated, a comment block containing the file name, author name, brief description in the following form (Doxygen style commenting) after the licence comment block:
+\begin{verbatim}
+///
+/// \file: filename.h
+/// \author: author name
+/// \brief description of the file
+///
+\end{verbatim}
+More information if needed may be added after the brief description.
+\subsection{Class comments}
+Any header prototyping a class should have a comment block containing the class name and a brief description:
+\begin{verbatim}
+///
+/// \class class_name
+/// \brief description of class
+///
+\end{verbatim}
+More information if needed may be added after the brief description.
+\subsection{Function comments}
+Functional comments should appear in the header files in which they are prototyped.  In the case of a function that has no prototype, the functional comment will go directly before the function implementation.  The comment block should have the following form:
+\begin{verbatim}
+///
+/// \fn function_name
+/// \brief description of function
+/// \return what the function returns
+///
+\end{verbatim}
+\subsection{Class variables}
+Member variables in a class should have the following comment block:
+\begin{verbatim}
+///
+/// \var scope::variable_name
+/// \brief description of variable
+///
+\end{verbatim}
+\section{Program code}
+\subsection{Indentation}
+Every line inside of a code block should be indented for easier readability.\\
+Tabs should not be used for indentation, only spaces.  Indentation width will be two spaces.
+\subsection{Naming conventions}
+The name of a variable, function, class, or struct should be obvious from it's name.\\
+Names will use underscored names not mixed case.\\
+One letter names may only be used as counters in loops or if the usage is obvious or widely accepted (x and y for coordinates, etc).\\
+Global variables should not be used. Any global constant should remain constant and may not be modified.\\
+Template names should be descriptive or conventional.
+Class names should begin with lower case letters.
+\subsection{Namespaces}
+Namespaces should never be "use"d.  On using any STL class, it should be manually scoped:
+\begin{verbatim}
+using namespace std; //Not good
+vector<string> names; //Not good
+std::vector<std::string> names; //GOOD
+\end{verbatim}
+Namespaces may be used in implementation files if they do not cause conflicts, as implementation files should never be included in another file.
+\section{Statements}
+\subsection{Simple statements}
+Each line should contain only one statement:
+\begin{verbatim}
+int x=5; cout << x << endl; //bad
+
+//the following lines are good
+int x=5;
+cout << x << endl;
+\end{verbatim}
+The comma operator should not be used to group multiple statements unless it makes the meaning clearer.
+\subsection{Variable declaration}
+Multiple variables may only be declared on one line if none of the values of the variables are being set. Example:
+\begin{verbatim}
+int x,y,z; //good
+int x=5,y,z; //bad
+int x=5; //good
+int y,z; //good
+\end{verbatim}
+\subsection{Compound statements}
+Any grouping of statements enclosed in braces is considered a compound statement, and should follow the following rules:\\
+1) Any statements within the compound statement should be indented an additional two spaces from the surrounding code.\\
+2) The opening brace should begin the line before the statements in the code block, and the closing brace should begin the line after the statements in the code block.  Example: \\
+\begin{verbatim}
+if (i==5)
+{
+  //code goes here
+}
+
+//NOT THIS
+if (i==5) { /* code */ }
+\end{verbatim}
+The only exception to this rule is if the compound statement is a one line implementation of a mutator or accessor function in a header file.\\
+3) Braces should be used around all statements, even if it is a single line following (as in a single command after an if statement).
+\subsection{return Statements}
+A return statement should not use parentheses unless they are needed to make the return value more obvious.  Examples:
+\begin{verbatim}
+return;
+
+return my_list.size();
+
+return (index<max_index? index : max_index);
+\end{verbatim}
+\end{document}
