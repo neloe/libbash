@@ -4,18 +4,18 @@ list:
 "make" -> (LIST (COMMAND (STRING make)))
 "make && make modules_install;" -> (LIST (&& (COMMAND (STRING make)) (COMMAND (STRING make) (STRING modules_install))))
 "make && make modules_install &" -> (LIST (&& (COMMAND (STRING make)) (COMMAND (STRING make) (STRING modules_install))))
-"cd /usr/bin; ls -al |grep more&& cp ./less ./more" -> (LIST (COMMAND (STRING cd) (STRING /usr/bin)) (&& (| (COMMAND (STRING ls) (STRING -al)) (COMMAND (STRING grep) (STRING more))) (COMMAND (STRING cp) (STRING ./less) (STRING ./more))))
+"cd /usr/bin; ls -al |grep more&& cp ./less ./more" -> (LIST (COMMAND (STRING cd) (STRING / usr / bin)) (&& (| (COMMAND (STRING ls) (STRING -al)) (COMMAND (STRING grep) (STRING more))) (COMMAND (STRING cp) (STRING . / less) (STRING . / more))))
 "mkdir test
 cd test
 cp ../asdf.tar.gz .
-tar xpf asdf.tar.gz" -> (LIST (COMMAND (STRING mkdir) (STRING test)) (COMMAND (STRING cd) (STRING test)) (COMMAND (STRING cp) (STRING ../asdf.tar.gz) (STRING .)) (COMMAND (STRING tar) (STRING xpf) (STRING asdf.tar.gz)))
+tar xpf asdf.tar.gz" -> (LIST (COMMAND (STRING mkdir) (STRING test)) (COMMAND (STRING cd) (STRING test)) (COMMAND (STRING cp) (STRING .. / asdf . tar . gz) (STRING .)) (COMMAND (STRING tar) (STRING xpf) (STRING asdf . tar . gz)))
 "mkdir build && cd build
-./configure && make" -> (LIST (&& (COMMAND (STRING mkdir) (STRING build)) (COMMAND (STRING cd) (STRING build))) (&& (COMMAND (STRING ./configure)) (COMMAND (STRING make))))
+./configure && make" -> (LIST (&& (COMMAND (STRING mkdir) (STRING build)) (COMMAND (STRING cd) (STRING build))) (&& (COMMAND (STRING . / configure)) (COMMAND (STRING make))))
 "make;make modules_install
 
 
-cp arch/x86_64/boot/bzImage /boot/kernel" -> (LIST (COMMAND (STRING make)) (COMMAND (STRING make) (STRING modules_install)) (COMMAND (STRING cp) (STRING arch/x86_64/boot/bzImage) (STRING /boot/kernel)))
+cp arch/x86_64/boot/bzImage /boot/kernel" -> (LIST (COMMAND (STRING make)) (COMMAND (STRING make) (STRING modules_install)) (COMMAND (STRING cp) (STRING arch / x86_64 / boot / bzImage) (STRING / boot / kernel)))
 
 "a=asdf
 b=three
-echo \"a b\"" -> (LIST (= a (STRING asdf)) (= b (STRING three)) (COMMAND (STRING echo) (STRING a b)))
+echo \"a b\"" -> (LIST (= a (STRING asdf)) (= b (STRING three)) (COMMAND (STRING echo) (STRING a   b)))

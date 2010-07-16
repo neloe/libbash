@@ -64,7 +64,9 @@ flcomment
 commentpart
 	:	nqstr|BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|PIPE|COMMA|SQUOTE|QUOTE|'<'|'>';
 list	:	list_level_2 BLANK? (';'|'&'|EOL)? -> ^(LIST list_level_2);
-clist	:	list_level_2 -> ^(LIST list_level_2);
+clist
+options{greedy=false;}
+	:	list_level_2 -> ^(LIST list_level_2);
 list_level_1
 	:	(function|pipeline) (BLANK!?('&&'^|'||'^)BLANK!? (function|pipeline))*;
 list_level_2
@@ -74,15 +76,17 @@ pipeline
 	|	time?('!' BLANK!)? BLANK!? command^ (BLANK!?PIPE^ BLANK!? command)*;
 time	:	TIME^ BLANK! timearg?;
 timearg	:	'-p' BLANK!;
-command	:	EXPORT^ var_def+
+command
+	:	EXPORT^ var_def+
 	|	compound_comm
 	|	simple_command;
 simple_command
 	:	var_def+ bash_command^ redirect*
 	|	bash_command^ redirect*;
 bash_command
-	:	fname (BLANK arg)* -> ^(COMMAND fname arg*);
-arg	:	brace_expansion
+	:	fname_no_res_word (BLANK arg)* -> ^(COMMAND fname_no_res_word arg*);
+arg
+	:	brace_expansion
 	|	var_ref
 	|	fname
 	|	res_word_str -> ^(STRING res_word_str)
@@ -162,12 +166,14 @@ until_expr
 case_expr
 	:	CASE^ BLANK! word wspace! IN! wspace! (case_stmt wspace!)* last_case? ESAC!;
 case_stmt
+options{greedy=false;}
 	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist wspace* DOUBLE_SEMIC
 		-> ^(CASE_PATTERN $pat+ clist)
 	|	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* DOUBLE_SEMIC
 		-> ^(CASE_PATTERN $pat+)
 	;
 last_case
+options{greedy=false;}
 	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist? (wspace* DOUBLE_SEMIC|(BLANK? EOL)+)
 		-> ^(CASE_PATTERN $pat+ clist?)
 	;
@@ -217,13 +223,13 @@ var_exp	:	var_name WORDOP^ word
 	|	var_name (POUND^|POUNDPOUND^) fname
 	|	var_name (PCT^|PCTPCT^) fname
 	|	var_name SLASH POUND ns_str SLASH fname -> ^(REPLACE_FIRST var_name ns_str fname)
-	| var_name SLASH PCT ns_str SLASH fname -> ^(REPLACE_LAST var_name ns_str fname)
+	| 	var_name SLASH PCT ns_str SLASH fname -> ^(REPLACE_LAST var_name ns_str fname)
+	|	var_name SLASH SLASH ns_str SLASH fname -> ^(REPLACE_ALL var_name ns_str fname)
+	|	var_name SLASH SLASH ns_str SLASH? -> ^(REPLACE_ALL var_name ns_str)
 	|	var_name SLASH ns_str SLASH fname -> ^(REPLACE_FIRST var_name ns_str fname)
 	|	var_name SLASH POUND ns_str SLASH? -> ^(REPLACE_FIRST var_name ns_str)
 	|	var_name SLASH PCT ns_str SLASH? -> ^(REPLACE_LAST var_name ns_str)
 	|	var_name SLASH ns_str SLASH? -> ^(REPLACE_FIRST var_name ns_str)
-	|	var_name SLASH SLASH ns_str SLASH fname -> ^(REPLACE_ALL var_name ns_str fname)
-	|	var_name SLASH SLASH ns_str SLASH? -> ^(REPLACE_ALL var_name ns_str)
 	|	arr_var_ref
 	|	var_name;
 var_name:	num|NAME|TIMES|AT;
@@ -268,57 +274,49 @@ word	:	brace_expansion
 pattern	:	command_sub
 	|	fname
 	|	TIMES;
-num	:	DIGIT|NUMBER;
+num
+options{k=1;backtrack=false;}
+	:	DIGIT|NUMBER;
 //A rule for filenames/strings
 res_word_str
 	:	BANG|CASE|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE|TIME;
-str_part:	ns_str_part
+str_part
+	:	ns_str_part
 	|	SLASH;
-ns_str_part:	num
+str_part_with_pound
+	:	str_part
+	|	POUND
+	|	POUNDPOUND;
+ns_str_part
+	:	num
+	|	res_word_str
 	|	NAME|NQSTR|TIMES|PLUS|EQUALS|PCT|PCTPCT|MINUS|LSQUARE|RSQUARE|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC;
-ns_str	:	ns_str_agg -> ^(STRING ns_str_agg);
-ns_str_agg
-	:	nsp=ns_str_part nsap=ns_str_aggp -> STRING[$nsp.text+$nsap.text]
-	|	ns_str_part
-	|	rw=res_word_str nsap=ns_str_aggp -> STRING[$rw.text+$nsap.text];
-ns_str_aggp
-	:	nsp=ns_str_part nsap=ns_str_aggp -> STRING[$nsp.text+$nsap.text]
-	|	ns_str_part
-	|	rw=res_word_str nsap=ns_str_aggp -> STRING[$rw.text+$nsap.text]
-	|	res_word_str
-	|	(ch=POUND|ch=POUNDPOUND) sap=str_aggp -> STRING[$ch.text+$sap.text]
-	|	POUND|POUNDPOUND;
-str_agg	:	sp=str_part sap=str_aggp -> STRING[$sp.text+$sap.text]
-	|	str_part
-	|	rw=res_word_str sap=str_aggp -> STRING[$rw.text+$sap.text];
-str_aggp:	sp=str_part sap=str_aggp -> STRING[$sp.text+$sap.text]
-	|	str_part
-	|	rw=res_word_str sap=str_aggp -> STRING[$rw.text+$sap.text]
-	|	res_word_str
-	|	(ch=POUND|ch=POUNDPOUND) sap=str_aggp -> STRING[$ch.text+$sap.text]
-	|	POUND|POUNDPOUND;
-dq_str_agg
-	:	dsap=dq_str_aggp dsa=dq_str_agg -> STRING[$dsap.text+$dsa.text]
-	|	dq_str_aggp;
-dq_str_aggp
-	:	str_agg
-	|	res_word_str
-	|	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK;
-sq_str_agg
-	:	ssap=sq_str_aggp ssa=sq_str_agg -> STRING[$ssap.text+$ssa.text]
-	|	sq_str_aggp;
-sq_str_aggp
-	:	str_agg
-	|	res_word_str
-	|	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|QUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|DOLLAR|TICK;
+ns_str_part_no_res
+	:	num
+	|	NAME|NQSTR|TIMES|PLUS|EQUALS|PCT|PCTPCT|MINUS|LSQUARE|RSQUARE|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC;
+ns_str	:	ns_str_part* -> ^(STRING ns_str_part*);
+dq_str_part
+	:	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK|LEQ|GEQ
+	|	str_part_with_pound;
+sq_str_part
+	:	str_part_with_pound
+	|	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|QUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|DOLLAR|TICK|BOP|UOP;
 fname	:	nqstr -> ^(STRING nqstr)
-	|	QUOTE dqstr QUOTE -> ^(STRING dqstr)
+	|	dqstr -> ^(STRING dqstr)
 	|	QUOTE QUOTE -> ^(STRING)
-	|	SQUOTE sqstr SQUOTE -> ^(STRING sqstr)
+	|	sqstr -> ^(STRING sqstr)
 	|	SQUOTE SQUOTE -> ^(STRING);
-nqstr	:	(var_ref|command_sub|str_agg)+;
-dqstr	:	(var_ref|command_sub|dq_str_agg)+;
-sqstr	:	sq_str_agg;
+fname_no_res_word
+	:	nqstr_no_res_word -> ^(STRING nqstr_no_res_word)
+	|	dqstr -> ^(STRING dqstr)
+	|	QUOTE QUOTE -> ^(STRING)
+	|	sqstr -> ^(STRING sqstr)
+	|	SQUOTE SQUOTE -> ^(STRING);
+nqstr_no_res_word
+	:	(var_ref|command_sub|dqstr|sqstr|(str_part str_part_with_pound+)|(ns_str_part_no_res|SLASH))+;
+nqstr	:	(var_ref|command_sub|dqstr|sqstr|(str_part str_part_with_pound*))+;
+dqstr	:	QUOTE! (var_ref|command_sub|dq_str_part)+ QUOTE!;
+sqstr	:	SQUOTE!sq_str_part+ SQUOTE!;
 //Arithmetic expansion
 arithmetic
 	:	logicor;

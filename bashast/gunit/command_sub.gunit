@@ -3,5 +3,5 @@ gunit bashast;
 command_sub:
 "$(echo \"foo\")" -> (COMMAND_SUB (COMMAND (STRING echo) (STRING foo)))
 "$(ls |grep file)" -> (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING file))))
-"`cat output.log |grep error|cut`" -> (COMMAND_SUB (| (| (COMMAND (STRING cat) (STRING output.log)) (COMMAND (STRING grep) (STRING error))) (COMMAND (STRING cut))))
+"`cat output.log |grep error|cut`" -> (COMMAND_SUB (| (| (COMMAND (STRING cat) (STRING output . log)) (COMMAND (STRING grep) (STRING error))) (COMMAND (STRING cut))))
 

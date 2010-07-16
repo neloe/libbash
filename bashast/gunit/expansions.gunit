@@ -8,4 +8,4 @@ list:
 "for each in `ls |grep output`; do
 echo $each
 done" -> (LIST (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING output)))) (LIST (COMMAND (STRING echo) (VAR_REF each)))))
-"wc <(cat /usr/share/dict/linux.words)" -> (LIST (COMMAND (STRING wc) (PROC_SUB < (LIST (COMMAND (STRING cat) (STRING /usr/share/dict/linux.words))))))
+"wc <(cat /usr/share/dict/linux.words)" -> (LIST (COMMAND (STRING wc) (PROC_SUB < (LIST (COMMAND (STRING cat) (STRING / usr / share / dict / linux . words))))))

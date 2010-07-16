@@ -1,12 +1,12 @@
 gunit bashast;
 
 cond_comp:
-"[[ -a this/is.afile ]]" -> (COMPOUND_COND (-a (STRING this/is.afile)))
+"[[ -a this/is.afile ]]" -> (COMPOUND_COND (-a (STRING this / is . afile)))
 "[[ -a this/is.afile]]" FAIL
 "[[-a this/is.afile ]]" FAIL
 "[[
--a this/is.afile ]]" -> (COMPOUND_COND (-a (STRING this/is.afile)))
-"test ! -a this/is.afile" -> (COMPOUND_COND (NEGATION (-a (STRING this/is.afile))))
+-a this/is.afile ]]" -> (COMPOUND_COND (-a (STRING this / is . afile)))
+"test ! -a this/is.afile" -> (COMPOUND_COND (NEGATION (-a (STRING this / is . afile))))
 arith_comp:
 "((5+3))" -> (COMPOUND_ARITH (+ 5 3))
 "(( 5+3 ))" -> (COMPOUND_ARITH (+ 5 3))
@@ -56,8 +56,8 @@ esac" -> (case (COMMAND_SUB (COMMAND (STRING echo) (STRING asdf))) (CASE_PATTERN
 for_expr:
 "for each in `ls |grep log`; do
 	echo \"file found\"
-done" -> (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file found))))
-"for each in `ls |grep log`; do echo \"file found\"; done" -> (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file found))))
+done" -> (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file   found))))
+"for each in `ls |grep log`; do echo \"file found\"; done" -> (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file   found))))
 "for each in `ls |grep log`; do echo file done" FAIL
 
 "for ((5+3;5+3;5+3)); do echo yay; done" -> (for (FOR_INIT (+ 5 3)) (FOR_COND (+ 5 3)) (FOR_MOD (+ 5 3)) (LIST (COMMAND (STRING echo) (STRING yay))))
@@ -69,8 +69,8 @@ done" -> (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) 
 sel_expr:
 "select each in `ls |grep log`; do
   echo \"file found\"
-	done" -> (select each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file found))))
-"select each in `ls |grep log`; do echo \"file found\"; done" -> (select each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file found))))
+	done" -> (select each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file   found))))
+"select each in `ls |grep log`; do echo \"file found\"; done" -> (select each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING log)))) (LIST (COMMAND (STRING echo) (STRING file   found))))
 "select each in `ls |grep log`; do echo file done" FAIL
 
 if_expr:
@@ -97,15 +97,15 @@ fi" -> (if (LIST (COMMAND (STRING echo) (STRING yay2))) (LIST (COMMAND (STRING e
 while_expr:
 "while echo true; do
 echo \"file found\"
-done" -> (while (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file found))))
-"while echo true; do echo \"file found\"; done" -> (while (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file found))))
+done" -> (while (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file   found))))
+"while echo true; do echo \"file found\"; done" -> (while (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file   found))))
 "while echo true`; do echo file done" FAIL
 
 until_expr:
 "until echo true; do
 echo \"file found\"
-done" -> (until (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file found))))
-"until echo true; do echo \"file found\"; done" -> (until (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file found))))
+done" -> (until (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file   found))))
+"until echo true; do echo \"file found\"; done" -> (until (LIST (COMMAND (STRING echo) (STRING true))) (LIST (COMMAND (STRING echo) (STRING file   found))))
 "until echo true`; do echo file done" FAIL
 
 case_expr:
@@ -114,7 +114,7 @@ case_expr:
 echo \"Usage: $0 start|stop\" >&2
 exit 3
 ;;
-esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage:  (VAR_REF 0)  start|stop) (>& 2)) (COMMAND (STRING exit) (STRING 3)))))
+esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage :   (VAR_REF 0)   start | stop) (>& 2)) (COMMAND (STRING exit) (STRING 3)))))
 
 "case $asdf in
 a)
@@ -127,7 +127,7 @@ echo \"yay\"
 ;;
 esac" -> (case (STRING asdf) (CASE_PATTERN (STRING asdf) (LIST (COMMAND (STRING echo) (STRING yay)))))
 "case 1 in 1) echo yay ;; esac" -> (case 1 (CASE_PATTERN (STRING 1) (LIST (COMMAND (STRING echo) (STRING yay)))))
-"case /usr/bin in 1) echo yay ;; esac" -> (case (STRING /usr/bin) (CASE_PATTERN (STRING 1) (LIST (COMMAND (STRING echo) (STRING yay)))))
+"case /usr/bin in 1) echo yay ;; esac" -> (case (STRING / usr / bin) (CASE_PATTERN (STRING 1) (LIST (COMMAND (STRING echo) (STRING yay)))))
 "case \"$1\" in
 stop)
 ;;
@@ -135,4 +135,4 @@ stop)
 echo \"Usage: $0 start|stop\" >&2
 exit 3
 ;;
-esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING stop)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage:  (VAR_REF 0)  start|stop) (>& 2)) (COMMAND (STRING exit) (STRING 3)))))
+esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING stop)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage :   (VAR_REF 0)   start | stop) (>& 2)) (COMMAND (STRING exit) (STRING 3)))))

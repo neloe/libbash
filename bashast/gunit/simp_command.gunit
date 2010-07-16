@@ -1,12 +1,12 @@
 gunit bashast;
 
 simple_command:
-"./command" -> (COMMAND (STRING ./command))
+"./command" -> (COMMAND (STRING . / command))
 "asdf=5 cat" -> (COMMAND (STRING cat) (= asdf 5))
-"asdf=5 cat out.log > result" -> (COMMAND (STRING cat) (STRING out.log) (= asdf 5) (> (STRING result)))
-"cat results.log > asdf 2> /dev/null" -> (COMMAND (STRING cat) (STRING results.log) (> (STRING asdf)) (2> (STRING /dev/null)))
+"asdf=5 cat out.log > result" -> (COMMAND (STRING cat) (STRING out . log) (= asdf 5) (> (STRING result)))
+"cat results.log > asdf 2> /dev/null" -> (COMMAND (STRING cat) (STRING results . log) (> (STRING asdf)) (2> (STRING / dev / null)))
 "i=3 g=4 h=18 grep asdf" -> (COMMAND (STRING grep) (STRING asdf) (= i 3) (= g 4) (= h 18))
-"./configure --prefix=/usr/local" -> (COMMAND (STRING ./configure) (STRING --prefix=/usr/local))
-"[[while" -> (COMMAND (STRING [[while))
-"./foobär" -> (COMMAND (STRING ./foobär))
-"cat ~/Documents/todo.txt" -> (COMMAND (STRING cat) (STRING ~/Documents/todo.txt))
+"./configure --prefix=/usr/local" -> (COMMAND (STRING . / configure) (STRING -- prefix = / usr / local))
+"[[while" -> (COMMAND (STRING [[ while))
+"./foobär" -> (COMMAND (STRING . / foobär))
+"cat ~/Documents/todo.txt" -> (COMMAND (STRING cat) (STRING ~ / Documents / todo . txt))

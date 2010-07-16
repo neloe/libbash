@@ -20,12 +20,12 @@ gunit bashast;
 
 redirect:
 ">output_file" -> (> (STRING output_file))
-"1>output.file" -> (1> (STRING output.file))
+"1>output.file" -> (1> (STRING output . file))
 "2>&1" -> (2>& 1)
-">> /this/is/append" -> (>> (STRING /this/is/append))
+">> /this/is/append" -> (>> (STRING / this / is / append))
 "&> allout" -> (&> (STRING allout))
-"< this.is.1input" -> (< (STRING this.is.1input))
-"3< \"input from file\"" -> (3< (STRING input from file))
+"< this.is.1input" -> (< (STRING this . is . 1input))
+"3< \"input from file\"" -> (3< (STRING input   from   file))
 "2<&0" -> (2<& 0)
 "<< asdf
 asdf

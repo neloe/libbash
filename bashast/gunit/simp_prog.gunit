@@ -7,7 +7,7 @@ echo \"I found a file\"
 done
 
 echo \"finding complete\"
-"-> (LIST (COMMAND (STRING echo) (STRING finding file)) (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING output)))) (LIST (COMMAND (STRING echo) (STRING I found a file)))) (COMMAND (STRING echo) (STRING finding complete)))
+"-> (LIST (COMMAND (STRING echo) (STRING finding   file)) (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING output)))) (LIST (COMMAND (STRING echo) (STRING I   found   a   file)))) (COMMAND (STRING echo) (STRING finding   complete)))
 
 "function quit {
   exit
@@ -17,4 +17,4 @@ hello () {
 }
 hello
 quit
-echo foo" -> (LIST (function (STRING quit) (CURRSHELL (LIST (COMMAND (STRING exit))))) (function (STRING hello) (CURRSHELL (LIST (COMMAND (STRING echo) (STRING Hello!))))) (COMMAND (STRING hello)) (COMMAND (STRING quit)) (COMMAND (STRING echo) (STRING foo)))
+echo foo" -> (LIST (function (STRING quit) (CURRSHELL (LIST (COMMAND (STRING exit))))) (function (STRING hello) (CURRSHELL (LIST (COMMAND (STRING echo) (STRING Hello !))))) (COMMAND (STRING hello)) (COMMAND (STRING quit)) (COMMAND (STRING echo) (STRING foo)))
