@@ -19,14 +19,14 @@ along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 gunit bashast;
 
 redirect:
-">output_file" -> (> (STRING output_file))
-"1>output.file" -> (1> (STRING output . file))
-"2>&1" -> (2>& 1)
-">> /this/is/append" -> (>> (STRING / this / is / append))
-"&> allout" -> (&> (STRING allout))
-"< this.is.1input" -> (< (STRING this . is . 1input))
-"3< \"input from file\"" -> (3< (STRING input   from   file))
-"2<&0" -> (2<& 0)
+">output_file" -> (REDIR > (STRING output_file))
+"1>output.file" -> (REDIR 1 > (STRING output . file))
+"2>&1" -> (REDIR 2 >& 1)
+">> /this/is/append" -> (REDIR >> (STRING / this / is / append))
+"&> allout" -> (REDIR &> (STRING allout))
+"< this.is.1input" -> (REDIR < (STRING this . is . 1input))
+"3< \"input from file\"" -> (REDIR 3 < (STRING input   from   file))
+"2<&0" -> (REDIR 2 <& 0)
 "<< asdf
 asdf
 " -> (<< (STRING asdf) (STRING asdf))

@@ -19,7 +19,7 @@ along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 grammar bashast;
 options
 {
-	backtrack=true;
+	backtrack	= true;
 	output	= AST;
 	language	= Java;
 	ASTLabelType	= CommonTree;
@@ -56,6 +56,9 @@ tokens{
 	COMMAND;
 	REPLACE_FIRST;
 	REPLACE_LAST;
+	FILE_DESCRIPTOR;
+	FILE_DESCRIPTOR_MOVE;
+	REDIR;
 }
 
 start	:	(flcomment! EOL!)? EOL!* list^;
@@ -92,10 +95,10 @@ arg
 	|	res_word_str -> ^(STRING res_word_str)
 	|	command_sub
 	|	var_ref;
-redirect:	BLANK!?hsop^BLANK!? fname
-	|	BLANK!?hdop^BLANK!? fname EOL! heredoc
-	|	BLANK!?redir_op^BLANK!? DIGIT MINUS?
-	|	BLANK!?redir_op^BLANK!? redir_dest
+redirect:	BLANK!?hsop^ BLANK!? fname
+	|	BLANK!?hdop^ BLANK!? fname EOL! heredoc
+	|	BLANK?redir_op BLANK? DIGIT MINUS? -> ^(REDIR redir_op DIGIT MINUS?)
+	|	BLANK?redir_op BLANK? redir_dest -> ^(REDIR redir_op redir_dest)
 	|	BLANK!?proc_sub;
 
 heredoc	:	(fname EOL!)*;
@@ -103,8 +106,8 @@ redir_dest
 	:	fname //path to a file
 	|	file_desc_as_file; //handles file descriptors0
 file_desc_as_file
-	:	a='&'b=DIGIT -> OP[$a.text+$b.text]
-	|	a='&'b=DIGIT'-' -> OP[$a.text+$b.text+"-"];
+	:	AMP DIGIT -> FILE_DESCRIPTOR[$DIGIT]
+	|	AMP DIGIT MINUS -> FILE_DESCRIPTOR_MOVE[$DIGIT];
 hsop	:	'<''<''<' -> OP["<<<"];
 hdop	:	'<''<''-' -> OP["<<-"]
 	|	'<''<' -> OP["<<"];
@@ -117,7 +120,7 @@ redir_op:	'&''<' -> OP["&<"]
 	|	'&''>''>' -> OP ["&>>"]
 	|	'<'
 	|	'>'
-	|	fd=DIGIT op=redir_op -> OP[$fd.text+$op.text];
+	|	DIGIT redir_op;
 brace_expansion
 	:	pre=fname? brace post=fname? -> ^(BRACE_EXP ($pre)? brace ($post)?);
 brace
@@ -167,15 +170,15 @@ case_expr
 	:	CASE^ BLANK! word wspace! IN! wspace! (case_stmt wspace!)* last_case? ESAC!;
 case_stmt
 options{greedy=false;}
-	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist wspace* DOUBLE_SEMIC
-		-> ^(CASE_PATTERN $pat+ clist)
-	|	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* DOUBLE_SEMIC
-		-> ^(CASE_PATTERN $pat+)
+	:	wspace* (LPAREN BLANK?)? pattern (BLANK? PIPE BLANK? pattern)* BLANK? RPAREN wspace* clist wspace* DOUBLE_SEMIC
+		-> ^(CASE_PATTERN pattern+ clist)
+	|	wspace* (LPAREN BLANK?)? pattern (BLANK? PIPE BLANK? pattern)* BLANK? RPAREN wspace* DOUBLE_SEMIC
+		-> ^(CASE_PATTERN pattern+)
 	;
 last_case
 options{greedy=false;}
-	:	wspace* (LPAREN BLANK?)? pat+=pattern (BLANK? PIPE BLANK? pat+=pattern)* BLANK? RPAREN wspace* clist? (wspace* DOUBLE_SEMIC|(BLANK? EOL)+)
-		-> ^(CASE_PATTERN $pat+ clist?)
+	:	wspace* (LPAREN BLANK?)? pattern (BLANK? PIPE BLANK? pattern)* BLANK? RPAREN wspace* clist? (wspace* DOUBLE_SEMIC|(BLANK? EOL)+)
+		-> ^(CASE_PATTERN pattern+ clist?)
 	;
 subshell:	LPAREN wspace? clist (BLANK? SEMIC)? (BLANK? EOL)* BLANK? RPAREN -> ^(SUBSHELL clist);
 currshell
@@ -337,17 +340,21 @@ unary	:	primary
 	|	pre_inc_dec;
 negation
 	:	(BANG^BLANK!?|TILDE^BLANK!?)?unary;
-exp	:	negation (BLANK!? EXP^ BLANK!? negation)* ;
-tdm	:	exp (BLANK!?(TIMES^|SLASH^|PCT^)BLANK!? exp)*;
+exponential
+	:	negation (BLANK!? EXP^ BLANK!? negation)* ;
+tdm	:	exponential (BLANK!?(TIMES^|SLASH^|PCT^)BLANK!? exponential)*;
 addsub	:	tdm (BLANK!? (PLUS^|MINUS^)BLANK!? tdm)*;
 shifts	:	addsub (BLANK!? (shiftop^) BLANK!? addsub)*;
 shiftop	:	'<''<' -> OP["<<"]
 	|	'>''>' -> OP[">>"];
 compare	:	shifts (BLANK!? (LEQ^|GEQ^|'<'^|'>'^)BLANK!? shifts)?;
-bitand	:	compare (BLANK!? AMP^ BLANK!? compare)*;
-bitxor	:	bitand (BLANK!? CARET^ BLANK!? bitand)*;
-bitor	:	bitxor (BLANK!? PIPE^ BLANK!? bitxor)*;
-logicand:	bitor (BLANK!? LOGICAND^ BLANK!? bitor)*;
+bitwiseand
+	:	compare (BLANK!? AMP^ BLANK!? compare)*;
+bitwisexor
+	:	bitwiseand (BLANK!? CARET^ BLANK!? bitwiseand)*;
+bitwiseor
+	:	bitwisexor (BLANK!? PIPE^ BLANK!? bitwisexor)*;
+logicand:	bitwiseor (BLANK!? LOGICAND^ BLANK!? bitwiseor)*;
 logicor	:	logicand (BLANK!? LOGICOR^ BLANK!? logicand)*;
 //process substitution
 proc_sub:	(dir='<'|dir='>')LPAREN BLANK? clist BLANK? RPAREN -> ^(PROC_SUB $dir clist);

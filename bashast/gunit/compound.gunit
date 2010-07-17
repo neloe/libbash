@@ -114,7 +114,7 @@ case_expr:
 echo \"Usage: $0 start|stop\" >&2
 exit 3
 ;;
-esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage :   (VAR_REF 0)   start | stop) (>& 2)) (COMMAND (STRING exit) (STRING 3)))))
+esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage :   (VAR_REF 0)   start | stop) (REDIR >& 2)) (COMMAND (STRING exit) (STRING 3)))))
 
 "case $asdf in
 a)
@@ -135,4 +135,4 @@ stop)
 echo \"Usage: $0 start|stop\" >&2
 exit 3
 ;;
-esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING stop)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage :   (VAR_REF 0)   start | stop) (>& 2)) (COMMAND (STRING exit) (STRING 3)))))
+esac" -> (case (STRING (VAR_REF 1)) (CASE_PATTERN (STRING stop)) (CASE_PATTERN (STRING *) (LIST (COMMAND (STRING echo) (STRING Usage :   (VAR_REF 0)   start | stop) (REDIR >& 2)) (COMMAND (STRING exit) (STRING 3)))))
