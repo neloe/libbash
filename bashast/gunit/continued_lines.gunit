@@ -1,0 +1,11 @@
+gunit bashast;
+
+start:
+
+"ech\
+o Hello\
+ world" -> (LIST (COMMAND (STRING ech o) (STRING Hello) (STRING world)))
+
+"sed -i \
+	-e 's/three/\
+  four/'" -> (LIST (COMMAND (STRING sed) (STRING -i) (STRING -e) (STRING s / three /    four /)))
