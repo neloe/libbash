@@ -66,19 +66,19 @@ flcomment
 	:	BLANK? '#' commentpart*;
 commentpart
 	:	nqstr|BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|PIPE|COMMA|SQUOTE|QUOTE|'<'|'>';
-list	:	list_level_2 BLANK? (';'|'&'|EOL)? -> ^(LIST list_level_2);
+list	:	list_level_2 BLANK* (';'|'&'|EOL)? -> ^(LIST list_level_2);
 clist
 options{greedy=false;}
 	:	list_level_2 -> ^(LIST list_level_2);
 list_level_1
-	:	(function|pipeline) (BLANK!?('&&'^|'||'^)BLANK!? (function|pipeline))*;
+	:	(function|pipeline) (BLANK!*('&&'^|'||'^)BLANK!* (function|pipeline))*;
 list_level_2
 	:	list_level_1 ((BLANK!?';'!|BLANK!?'&'^|(BLANK!? EOL!)+)BLANK!? list_level_1)*;
 pipeline
 	:	var_def+
-	|	time?('!' BLANK!)? BLANK!? command^ (BLANK!?PIPE^ BLANK!? command)*;
-time	:	TIME^ BLANK! timearg?;
-timearg	:	'-p' BLANK!;
+	|	time?('!' BLANK!*)? BLANK!* command^ (BLANK!* PIPE^ BLANK!* command)*;
+time	:	TIME^ BLANK!+ timearg?;
+timearg	:	'-p' BLANK!+;
 command
 	:	EXPORT^ var_def+
 	|	compound_comm
@@ -87,7 +87,7 @@ simple_command
 	:	var_def+ bash_command^ redirect*
 	|	bash_command^ redirect*;
 bash_command
-	:	fname_no_res_word (BLANK arg)* -> ^(COMMAND fname_no_res_word arg*);
+	:	fname_no_res_word (BLANK+ arg)* -> ^(COMMAND fname_no_res_word arg*);
 arg
 	:	brace_expansion
 	|	var_ref
@@ -95,11 +95,11 @@ arg
 	|	res_word_str -> ^(STRING res_word_str)
 	|	command_sub
 	|	var_ref;
-redirect:	BLANK!?hsop^ BLANK!? fname
-	|	BLANK!?hdop^ BLANK!? fname EOL! heredoc
-	|	BLANK?redir_op BLANK? DIGIT MINUS? -> ^(REDIR redir_op DIGIT MINUS?)
-	|	BLANK?redir_op BLANK? redir_dest -> ^(REDIR redir_op redir_dest)
-	|	BLANK!?proc_sub;
+redirect:	BLANK!* hsop^ BLANK!* fname
+	|	BLANK!* hdop^ BLANK!* fname EOL! heredoc
+	|	BLANK* redir_op BLANK* DIGIT MINUS? -> ^(REDIR redir_op DIGIT MINUS?)
+	|	BLANK* redir_op BLANK* redir_dest -> ^(REDIR redir_op redir_dest)
+	|	BLANK!* proc_sub;
 
 heredoc	:	(fname EOL!)*;
 redir_dest
@@ -124,7 +124,7 @@ redir_op:	'&''<' -> OP["&<"]
 brace_expansion
 	:	pre=fname? brace post=fname? -> ^(BRACE_EXP ($pre)? brace ($post)?);
 brace
-	:	LBRACE BLANK? braceexp BLANK?RBRACE -> ^(BRACE braceexp);
+	:	LBRACE BLANK* braceexp BLANK?RBRACE -> ^(BRACE braceexp);
 braceexp:	commasep|range;
 range	:	DIGIT DOTDOT^ DIGIT
 	|	NAME DOTDOT^ NAME;
@@ -134,8 +134,8 @@ bepart	:	fname
 	|	command_sub;
 commasep:	bepart(COMMA! bepart)+;
 command_sub
-	:	DOLLAR LPAREN BLANK? pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
-	|	TICK BLANK? pipeline BLANK? TICK -> ^(COMMAND_SUB pipeline) ;
+	:	DOLLAR LPAREN BLANK* pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
+	|	TICK BLANK* pipeline BLANK? TICK -> ^(COMMAND_SUB pipeline) ;
 //compound commands
 compound_comm
 	:	for_expr
@@ -149,17 +149,17 @@ compound_comm
 	|	arith_comp
 	|	cond_comp;
 
-for_expr:	FOR BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(FOR NAME (word)? clist)
-	|	FOR BLANK? LLPAREN EOL? (BLANK? init=arithmetic BLANK?|BLANK)? (SEMIC (BLANK? fcond=arithmetic BLANK?|BLANK)? SEMIC|DOUBLE_SEMIC) (BLANK?mod=arithmetic)? wspace* RRPAREN semiel DO wspace clist semiel DONE
+for_expr:	FOR BLANK+ NAME (wspace IN BLANK+ word)? semiel DO wspace* clist semiel DONE -> ^(FOR NAME (word)? clist)
+	|	FOR BLANK* LLPAREN EOL? (BLANK* init=arithmetic BLANK*|BLANK+)? (SEMIC (BLANK? fcond=arithmetic BLANK*|BLANK+)? SEMIC|DOUBLE_SEMIC) (BLANK* mod=arithmetic)? wspace* RRPAREN semiel DO wspace clist semiel DONE
 		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $fcond)? ^(FOR_MOD $mod)? clist)
 	;
-sel_expr:	SELECT BLANK NAME (wspace IN BLANK word)? semiel DO wspace* clist semiel DONE -> ^(SELECT NAME (word)? clist)
+sel_expr:	SELECT BLANK+ NAME (wspace IN BLANK+ word)? semiel DO wspace* clist semiel DONE -> ^(SELECT NAME (word)? clist)
 	;
-if_expr	:	IF wspace+ ag=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel EOL* (elif_expr)* (ELSE wspace+ else_list=clist BLANK? semiel EOL*)? FI
+if_expr	:	IF wspace+ ag=clist BLANK* semiel THEN wspace+ iflist=clist BLANK? semiel EOL* (elif_expr)* (ELSE wspace+ else_list=clist BLANK? semiel EOL*)? FI
 		-> ^(IF $ag $iflist (elif_expr)* ^($else_list)?)
 	;
 elif_expr
-	:	ELIF BLANK ag=clist BLANK? semiel THEN wspace+ iflist=clist BLANK? semiel -> ^(IF["if"] $ag $iflist);
+	:	ELIF BLANK+ ag=clist BLANK* semiel THEN wspace+ iflist=clist BLANK* semiel -> ^(IF["if"] $ag $iflist);
 while_expr
 	:	WHILE wspace istrue=clist semiel DO wspace dothis=clist semiel DONE -> ^(WHILE $istrue $dothis)
 	;
@@ -167,20 +167,20 @@ until_expr
 	:	UNTIL wspace istrue=clist semiel DO wspace dothis=clist semiel DONE -> ^(UNTIL $istrue $dothis)
 	;
 case_expr
-	:	CASE^ BLANK! word wspace! IN! wspace! (case_stmt wspace!)* last_case? ESAC!;
+	:	CASE^ BLANK!+ word wspace! IN! wspace! (case_stmt wspace!)* last_case? ESAC!;
 case_stmt
 options{greedy=false;}
-	:	wspace* (LPAREN BLANK?)? pattern (BLANK? PIPE BLANK? pattern)* BLANK? RPAREN wspace* clist wspace* DOUBLE_SEMIC
+	:	wspace* (LPAREN BLANK*)? pattern (BLANK* PIPE BLANK? pattern)* BLANK* RPAREN wspace* clist wspace* DOUBLE_SEMIC
 		-> ^(CASE_PATTERN pattern+ clist)
-	|	wspace* (LPAREN BLANK?)? pattern (BLANK? PIPE BLANK? pattern)* BLANK? RPAREN wspace* DOUBLE_SEMIC
+	|	wspace* (LPAREN BLANK*)? pattern (BLANK? PIPE BLANK* pattern)* BLANK* RPAREN wspace* DOUBLE_SEMIC
 		-> ^(CASE_PATTERN pattern+)
 	;
 last_case
 options{greedy=false;}
-	:	wspace* (LPAREN BLANK?)? pattern (BLANK? PIPE BLANK? pattern)* BLANK? RPAREN wspace* clist? (wspace* DOUBLE_SEMIC|(BLANK? EOL)+)
+	:	wspace* (LPAREN BLANK*)? pattern (BLANK* PIPE BLANK? pattern)* BLANK* RPAREN wspace* clist? (wspace* DOUBLE_SEMIC|(BLANK* EOL)+)
 		-> ^(CASE_PATTERN pattern+ clist?)
 	;
-subshell:	LPAREN wspace? clist (BLANK? SEMIC)? (BLANK? EOL)* BLANK? RPAREN -> ^(SUBSHELL clist);
+subshell:	LPAREN wspace? clist (BLANK* SEMIC)? (BLANK* EOL)* BLANK* RPAREN -> ^(SUBSHELL clist);
 currshell
 	:	LBRACE wspace clist semiel RBRACE -> ^(CURRSHELL clist);
 arith_comp
@@ -188,9 +188,9 @@ arith_comp
 cond_comp
 	:	cond_expr -> ^(COMPOUND_COND cond_expr);
 //Variables
-var_def	:	BLANK? NAME LSQUARE BLANK? index BLANK? RSQUARE EQUALS value BLANK? -> ^(EQUALS ^(NAME  index) value)
-	|	BLANK!? NAME EQUALS^ value BLANK!?
-	|	BLANK!? LET! NAME EQUALS^ arithmetic BLANK!?;
+var_def	:	BLANK* NAME LSQUARE BLANK? index BLANK* RSQUARE EQUALS value BLANK* -> ^(EQUALS ^(NAME  index) value)
+	|	BLANK!* NAME EQUALS^ value BLANK!*
+	|	BLANK!* LET! NAME EQUALS^ arithmetic BLANK!*;
 value	:	DIGIT
 	|	NUMBER
 	|	var_ref
@@ -198,7 +198,7 @@ value	:	DIGIT
 	|	LPAREN! wspace!? arr_val RPAREN!;
 arr_val	:
 	|	(ag+=val wspace?)+ -> ^(ARRAY $ag+);
-val	:	'['!BLANK!?index BLANK!?']'!EQUALS^ pos_val
+val	:	'['!BLANK!*index BLANK!?']'!EQUALS^ pos_val
 	|	pos_val;
 pos_val	: command_sub
 	|	var_ref
@@ -208,7 +208,7 @@ index	:	num
 	|	NAME;
 //Array variables
 var_ref
-	:	DOLLAR LBRACE BLANK? var_exp BLANK? RBRACE -> ^(VAR_REF var_exp)
+	:	DOLLAR LBRACE BLANK* var_exp BLANK* RBRACE -> ^(VAR_REF var_exp)
 	|	DOLLAR NAME -> ^(VAR_REF NAME)
 	|	DOLLAR num -> ^(VAR_REF num)
 	|	DOLLAR TIMES -> ^(VAR_REF TIMES)
@@ -248,8 +248,8 @@ cond	:	BANG BLANK binary_cond -> ^(NEGATION binary_cond)
 	|	binary_cond
 	|	unary_cond;
 binary_cond
-	:	condpart BLANK!? bstrop^ BLANK!? condpart(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?
-	|	num BLANK! BOP^ BLANK! num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!?cond)?;
+	:	condpart BLANK!* bstrop^ BLANK!? condpart(BLANK!*(LOGICOR^|LOGICAND^) BLANK!*cond)?
+	|	num BLANK!+ BOP^ BLANK!+ num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!* cond)?;
 bstrop	:	BOP
 	|	EQUALS EQUALS -> OP["=="]
 	|	EQUALS
@@ -264,8 +264,8 @@ condpart:	brace_expansion
 	|	res_word_str -> ^(STRING res_word_str)
 	|	fname;
 //Rules for tokens.
-wspace	:	BLANK|EOL;
-semiel	:	(';'|EOL) BLANK?;
+wspace	:	BLANK+|EOL;
+semiel	:	(';'|EOL) BLANK*;
 
 //definition of word.  this is just going to grow...
 word	:	brace_expansion
@@ -291,9 +291,8 @@ str_part_with_pound
 	|	POUND
 	|	POUNDPOUND;
 ns_str_part
-	:	num
-	|	res_word_str
-	|	NAME|NQSTR|TIMES|PLUS|EQUALS|PCT|PCTPCT|MINUS|LSQUARE|RSQUARE|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC;
+	:	ns_str_part_no_res
+	|	res_word_str;
 ns_str_part_no_res
 	:	num
 	|	NAME|NQSTR|TIMES|PLUS|EQUALS|PCT|PCTPCT|MINUS|LSQUARE|RSQUARE|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC;
@@ -341,27 +340,27 @@ unary	:	primary
 negation
 	:	(BANG^BLANK!?|TILDE^BLANK!?)?unary;
 exponential
-	:	negation (BLANK!? EXP^ BLANK!? negation)* ;
-tdm	:	exponential (BLANK!?(TIMES^|SLASH^|PCT^)BLANK!? exponential)*;
-addsub	:	tdm (BLANK!? (PLUS^|MINUS^)BLANK!? tdm)*;
-shifts	:	addsub (BLANK!? (shiftop^) BLANK!? addsub)*;
+	:	negation (BLANK!* EXP^ BLANK!* negation)* ;
+tdm	:	exponential (BLANK!*(TIMES^|SLASH^|PCT^)BLANK!* exponential)*;
+addsub	:	tdm (BLANK!* (PLUS^|MINUS^)BLANK!* tdm)*;
+shifts	:	addsub (BLANK!* (shiftop^) BLANK!* addsub)*;
 shiftop	:	'<''<' -> OP["<<"]
 	|	'>''>' -> OP[">>"];
-compare	:	shifts (BLANK!? (LEQ^|GEQ^|'<'^|'>'^)BLANK!? shifts)?;
+compare	:	shifts (BLANK!* (LEQ^|GEQ^|'<'^|'>'^)BLANK!* shifts)?;
 bitwiseand
-	:	compare (BLANK!? AMP^ BLANK!? compare)*;
+	:	compare (BLANK!* AMP^ BLANK!* compare)*;
 bitwisexor
-	:	bitwiseand (BLANK!? CARET^ BLANK!? bitwiseand)*;
+	:	bitwiseand (BLANK!* CARET^ BLANK!* bitwiseand)*;
 bitwiseor
-	:	bitwisexor (BLANK!? PIPE^ BLANK!? bitwisexor)*;
-logicand:	bitwiseor (BLANK!? LOGICAND^ BLANK!? bitwiseor)*;
-logicor	:	logicand (BLANK!? LOGICOR^ BLANK!? logicand)*;
+	:	bitwisexor (BLANK!* PIPE^ BLANK!* bitwisexor)*;
+logicand:	bitwiseor (BLANK!* LOGICAND^ BLANK!* bitwiseor)*;
+logicor	:	logicand (BLANK!* LOGICOR^ BLANK!* logicand)*;
 //process substitution
-proc_sub:	(dir='<'|dir='>')LPAREN BLANK? clist BLANK? RPAREN -> ^(PROC_SUB $dir clist);
+proc_sub:	(dir='<'|dir='>')LPAREN BLANK* clist BLANK* RPAREN -> ^(PROC_SUB $dir clist);
 //the biggie: functions
-function:	FUNCTION BLANK fname (BLANK? parens)? wspace compound_comm redirect* -> ^(FUNCTION fname compound_comm redirect*)
-	|	fname BLANK? parens wspace compound_comm redirect* -> ^(FUNCTION["function"] fname compound_comm redirect*);
-parens	:	LPAREN BLANK? RPAREN;
+function:	FUNCTION BLANK+ fname (BLANK* parens)? wspace compound_comm redirect* -> ^(FUNCTION fname compound_comm redirect*)
+	|	fname BLANK* parens wspace compound_comm redirect* -> ^(FUNCTION["function"] fname compound_comm redirect*);
+parens	:	LPAREN BLANK* RPAREN;
 //TOkens
 
 COMMENT
@@ -455,5 +454,6 @@ UOP	:	MINUS LETTER;
 //Some builtins
 EXPORT	:	'export';
 //Tokens for strings
+CONTINUE_LINE	:	('\\' EOL)+{$channel=HIDDEN;};
 NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
-NQSTR	:	~('\n'|'\r'|' '|'\t'|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE)+;
+NQSTR	:	~('\n'|'\r'|' '|'\t'|'\\'|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE)+;
