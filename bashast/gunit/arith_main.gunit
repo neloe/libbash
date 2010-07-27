@@ -93,3 +93,15 @@ logicand:
 logicor:
 "17" -> "17"
 "17 || 15" -> (|| 17 15)
+
+arithmetic_assignment:
+"13"->"13"
+"foo=5+3" -> (= foo (+ 5 3))
+"asdf += 5" -> (+= asdf 5)
+
+arithmetic_condition:
+"5?7:2"->(ARITHMETIC_CONDITION 5 7 2)
+"(4-3)?0:1"->(ARITHMETIC_CONDITION (- 4 3) 0 1)
+
+arithmetics:
+"5+4, 3+2, $a*$b" -> (+ 5 4) (+ 3 2) (* (VAR_REF a) (VAR_REF b))
