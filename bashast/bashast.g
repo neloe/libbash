@@ -59,6 +59,8 @@ tokens{
 	FILE_DESCRIPTOR;
 	FILE_DESCRIPTOR_MOVE;
 	REDIR;
+	ARITHMETIC_CONDITION;
+	ARITHMETIC_COMMA;
 }
 
 start	:	(flcomment! EOL!)? EOL!* list^;
@@ -108,16 +110,16 @@ redir_dest
 file_desc_as_file
 	:	AMP DIGIT -> FILE_DESCRIPTOR[$DIGIT]
 	|	AMP DIGIT MINUS -> FILE_DESCRIPTOR_MOVE[$DIGIT];
-hsop	:	'<''<''<' -> OP["<<<"];
-hdop	:	'<''<''-' -> OP["<<-"]
-	|	'<''<' -> OP["<<"];
+hsop	:	HERE_STRING_OP;
+hdop	:	LSHIFT MINUS -> OP["<<-"]
+	|	LSHIFT -> OP["<<"];
 redir_op:	'&''<' -> OP["&<"]
 	|	'>''&' -> OP[">&"]
 	|	'<''&' -> OP["<&"]
 	|	'<''>' -> OP["<>"]
-	|	'>''>' -> OP[">>"]
+	|	RSHIFT -> OP[">>"]
 	|	'&''>' -> OP["&>"]
-	|	'&''>''>' -> OP ["&>>"]
+	|	'&'RSHIFT -> OP ["&>>"]
 	|	'<'
 	|	'>'
 	|	DIGIT redir_op;
@@ -295,7 +297,7 @@ ns_str_part
 	|	res_word_str;
 ns_str_part_no_res
 	:	num
-	|	NAME|NQSTR|TIMES|PLUS|EQUALS|PCT|PCTPCT|MINUS|LSQUARE|RSQUARE|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC;
+	|	NAME|NQSTR|TIMES|PLUS|EQUALS|PCT|PCTPCT|MINUS|LSQUARE|RSQUARE|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC|ARITH_ASSIGN|QMARK;
 ns_str	:	ns_str_part* -> ^(STRING ns_str_part*);
 dq_str_part
 	:	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK|LEQ|GEQ
@@ -320,12 +322,15 @@ nqstr	:	(var_ref|command_sub|dqstr|sqstr|(str_part str_part_with_pound*))+;
 dqstr	:	QUOTE! (var_ref|command_sub|dq_str_part)+ QUOTE!;
 sqstr	:	SQUOTE!sq_str_part+ SQUOTE!;
 //Arithmetic expansion
+arithmetics
+	:	arith+=arithmetic (BLANK* COMMA BLANK* arith+=arithmetic)+ -> ^(ARITHMETIC_COMMA $arith+);
 arithmetic
-	:	logicor;
+	:	arithmetic_condition
+	|	arithmetic_assignment;
 primary	:	num
 	|	var_ref
 	|	command_sub
-	|	LPAREN! arithmetic RPAREN!;
+	|	LPAREN! (arithmetic| arithmetics) RPAREN!;
 post_inc_dec
 	:	NAME BLANK?INC -> ^(POST_INCR NAME)
 	|	NAME BLANK?DEC -> ^(POST_DECR NAME);
@@ -343,9 +348,7 @@ exponential
 	:	negation (BLANK!* EXP^ BLANK!* negation)* ;
 tdm	:	exponential (BLANK!*(TIMES^|SLASH^|PCT^)BLANK!* exponential)*;
 addsub	:	tdm (BLANK!* (PLUS^|MINUS^)BLANK!* tdm)*;
-shifts	:	addsub (BLANK!* (shiftop^) BLANK!* addsub)*;
-shiftop	:	'<''<' -> OP["<<"]
-	|	'>''>' -> OP[">>"];
+shifts	:	addsub (BLANK!* (LSHIFT^|RSHIFT^) BLANK!* addsub)*;
 compare	:	shifts (BLANK!* (LEQ^|GEQ^|'<'^|'>'^)BLANK!* shifts)?;
 bitwiseand
 	:	compare (BLANK!* AMP^ BLANK!* compare)*;
@@ -355,6 +358,11 @@ bitwiseor
 	:	bitwisexor (BLANK!* PIPE^ BLANK!* bitwisexor)*;
 logicand:	bitwiseor (BLANK!* LOGICAND^ BLANK!* bitwiseor)*;
 logicor	:	logicand (BLANK!* LOGICOR^ BLANK!* logicand)*;
+
+arithmetic_condition
+	:	cnd=logicor QMARK t=logicor COLON f=logicor -> ^(ARITHMETIC_CONDITION $cnd $t $f);
+arithmetic_assignment
+	:	(NAME BLANK!* (EQUALS^|ARITH_ASSIGN^) BLANK!*)? logicor;
 //process substitution
 proc_sub:	(dir='<'|dir='>')LPAREN BLANK* clist BLANK* RPAREN -> ^(PROC_SUB $dir clist);
 //the biggie: functions
@@ -414,6 +422,12 @@ AMP	:	'&';
 LEQ	:	'<=';
 GEQ	:	'>=';
 CARET	:	'^';
+LT	:	'<';
+GT	:	'>';
+LSHIFT	:	'<<';
+RSHIFT	:	'>>';
+ARITH_ASSIGN
+	:	(TIMES|SLASH|PCT|PLUS|MINUS|LSHIFT|RSHIFT|AMP|CARET|PIPE) EQUALS;
 //some separators
 SEMIC	:	';';
 DOUBLE_SEMIC
@@ -434,6 +448,8 @@ fragment
 ALPHANUM:	(DIGIT|LETTER);
 //Some special redirect operators
 TILDE	:	'~';
+HERE_STRING_OP
+	:	'<<<';
 //Tokens for parameter expansion
 POUND	:	'#';
 POUNDPOUND
@@ -456,4 +472,4 @@ EXPORT	:	'export';
 //Tokens for strings
 CONTINUE_LINE	:	('\\' EOL)+{$channel=HIDDEN;};
 NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
-NQSTR	:	~('\n'|'\r'|' '|'\t'|'\\'|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE)+;
+NQSTR	:	~('\n'|'\r'|' '|'\t'|'\\'|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE)+;
