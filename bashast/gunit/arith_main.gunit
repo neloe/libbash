@@ -105,3 +105,8 @@ arithmetic_condition:
 
 arithmetics:
 "5+4, 3+2, $a*$b" -> (+ 5 4) (+ 3 2) (* (VAR_REF a) (VAR_REF b))
+
+start:
+"echo $(( 3 + 2 ))" -> (LIST (COMMAND (STRING echo) (STRING (+ 3 2))))
+"echo $((++i))" -> (LIST (COMMAND (STRING echo) (STRING (PRE_INCR i))))
+"echo \"The solution is: $(( 3+2 ))\""-> (LIST (COMMAND (STRING echo) (STRING The   solution   is :   (+ 3 2))))

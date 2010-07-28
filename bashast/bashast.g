@@ -276,9 +276,10 @@ unary_cond
 	:	UOP^ BLANK! condpart;
 condpart:	brace_expansion
 	|	var_ref
-	|	arithmetic
 	|	res_word_str -> ^(STRING res_word_str)
-	|	fname;
+	|	num
+	|	fname
+	|	arithmetic;
 //Rules for tokens.
 wspace	:	BLANK+|EOL;
 semiel	:	(';'|EOL) BLANK*;
@@ -289,6 +290,7 @@ word	:	brace_expansion
 	|	var_ref
 	|	num
 	|	fname
+	|	arithmetic_expansion
 	|	res_word_str -> ^(STRING res_word_str);
 pattern	:	command_sub
 	|	fname
@@ -331,11 +333,16 @@ fname_no_res_word
 	|	sqstr -> ^(STRING sqstr)
 	|	SQUOTE SQUOTE -> ^(STRING);
 nqstr_no_res_word
-	:	(var_ref|command_sub|dqstr|sqstr|(str_part str_part_with_pound+)|(ns_str_part_no_res|SLASH))+;
-nqstr	:	(var_ref|command_sub|dqstr|sqstr|(str_part str_part_with_pound*))+;
-dqstr	:	QUOTE! (var_ref|command_sub|dq_str_part)+ QUOTE!;
+	:	(var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound+)|(ns_str_part_no_res|SLASH))+;
+nqstr	:	(var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound*))+;
+dqstr	:	QUOTE! (var_ref|command_sub|arithmetic_expansion|dq_str_part)+ QUOTE!;
 sqstr	:	SQUOTE!sq_str_part+ SQUOTE!;
 //Arithmetic expansion
+arithmetic_expansion
+	:	DOLLAR! LLPAREN! BLANK!* arithmetic_part BLANK!* RRPAREN!;
+arithmetic_part
+	:	arithmetics
+	|	arithmetic;
 arithmetics
 	:	arithmetic (BLANK!* COMMA! BLANK!* arithmetic)*;
 arithmetic
@@ -344,6 +351,7 @@ arithmetic
 primary	:	num
 	|	var_ref
 	|	command_sub
+	|	NAME -> ^(VAR_REF NAME)
 	|	LPAREN! (arithmetics) RPAREN!;
 post_inc_dec
 	:	NAME BLANK?INC -> ^(POST_INCR NAME)
@@ -351,11 +359,11 @@ post_inc_dec
 pre_inc_dec
 	:	INC BLANK?NAME -> ^(PRE_INCR NAME)
 	|	DEC BLANK?NAME -> ^(PRE_DECR NAME);
-unary	:	primary
+unary	:	post_inc_dec
+	|	pre_inc_dec
+	|	primary
 	|	PLUS^ primary
-	|	MINUS^ primary
-	|	post_inc_dec
-	|	pre_inc_dec;
+	|	MINUS^ primary;
 negation
 	:	(BANG^BLANK!?|TILDE^BLANK!?)?unary;
 exponential
