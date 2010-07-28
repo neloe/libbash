@@ -4,7 +4,7 @@ list:
 "echo a{b,c,d}" -> (LIST (COMMAND (STRING echo) (BRACE_EXP (STRING a) (BRACE (STRING b) (STRING c) (STRING d)))))
 "((5+5))" -> (LIST (COMPOUND_ARITH (+ 5 5)))
 "(( 4 + $asdf ))" -> (LIST (COMPOUND_ARITH (+ 4 (VAR_REF asdf))))
-"[[ while=while ]] && echo true" -> (LIST (&& (COMPOUND_COND (= (STRING while) (STRING while))) (COMMAND (STRING echo) (STRING true))))
+"[[ while=while ]] && echo true" -> (LIST (&& (COMPOUND_COND (KEYWORD_TEST (= (STRING while) (STRING while)))) (COMMAND (STRING echo) (STRING true))))
 "for each in `ls |grep output`; do
 echo $each
 done" -> (LIST (for each (COMMAND_SUB (| (COMMAND (STRING ls)) (COMMAND (STRING grep) (STRING output)))) (LIST (COMMAND (STRING echo) (VAR_REF each)))))

@@ -1,12 +1,15 @@
 gunit bashast;
 
 cond_comp:
-"[[ -a this/is.afile ]]" -> (COMPOUND_COND (-a (STRING this / is . afile)))
+"[[ -a this/is.afile ]]" -> (COMPOUND_COND (KEYWORD_TEST (-a (STRING this / is . afile))))
 "[[ -a this/is.afile]]" FAIL
 "[[-a this/is.afile ]]" FAIL
 "[[
--a this/is.afile ]]" -> (COMPOUND_COND (-a (STRING this / is . afile)))
-"test ! -a this/is.afile" -> (COMPOUND_COND (NEGATION (-a (STRING this / is . afile))))
+-a this/is.afile ]]" -> (COMPOUND_COND (KEYWORD_TEST (-a (STRING this / is . afile))))
+"test ! -a this/is.afile" -> (COMPOUND_COND (BUILTIN_TEST (NEGATION (-a (STRING this / is . afile)))))
+"[[ asdf > qwert ]]" -> (COMPOUND_COND (KEYWORD_TEST (> (STRING asdf) (STRING qwert))))
+"[ asdf \> qwert ]" -> (COMPOUND_COND (BUILTIN_TEST (\> (STRING asdf) (STRING qwert))))
+
 arith_comp:
 "((5+3))" -> (COMPOUND_ARITH (+ 5 3))
 "(( 5+3 ))" -> (COMPOUND_ARITH (+ 5 3))

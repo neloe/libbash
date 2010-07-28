@@ -60,6 +60,8 @@ tokens{
 	FILE_DESCRIPTOR_MOVE;
 	REDIR;
 	ARITHMETIC_CONDITION;
+	KEYWORD_TEST;
+	BUILTIN_TEST;
 }
 
 start	:	(flcomment! EOL!)? EOL!* list^;
@@ -241,13 +243,20 @@ arr_var_ref
 	:	NAME^ LSQUARE! DIGIT+ RSQUARE!;
 //Conditional Expressions
 cond_expr
-	:	LLSQUARE! wspace! cond wspace! RRSQUARE!
-	|	LSQUARE! wspace! cond wspace! RSQUARE!
-	|	TEST! wspace! cond;
+	:	LLSQUARE wspace cond wspace RRSQUARE -> ^(KEYWORD_TEST cond)
+	|	LSQUARE wspace old_cond wspace RSQUARE -> ^(BUILTIN_TEST old_cond)
+	|	TEST wspace old_cond -> ^(BUILTIN_TEST old_cond);
 cond	:	BANG BLANK binary_cond -> ^(NEGATION binary_cond)
 	|	BANG BLANK unary_cond -> ^(NEGATION unary_cond)
 	|	binary_cond
 	|	unary_cond;
+old_cond:	BANG BLANK binary_old_cond -> ^(NEGATION binary_old_cond)
+	|	BANG BLANK unary_cond -> ^(NEGATION unary_cond)
+	|	binary_old_cond
+	|	unary_cond;
+binary_old_cond
+	:	condpart BLANK!* binary_string_op_old^ BLANK!? condpart(BLANK!* UOP^ BLANK!*cond)?
+	|	num BLANK!+ BOP^ BLANK!+ num(BLANK!? UOP^ BLANK!* cond)?;
 binary_cond
 	:	condpart BLANK!* bstrop^ BLANK!? condpart(BLANK!*(LOGICOR^|LOGICAND^) BLANK!*cond)?
 	|	num BLANK!+ BOP^ BLANK!+ num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!* cond)?;
@@ -257,6 +266,12 @@ bstrop	:	BOP
 	|	BANG EQUALS -> OP["!="]
 	|	'<'
 	|	'>';
+binary_string_op_old
+	:	BOP
+	|	EQUALS
+	|	BANG EQUALS -> OP["!="]
+	|	ESC_LT
+	|	ESC_GT;
 unary_cond
 	:	UOP^ BLANK! condpart;
 condpart:	brace_expansion
@@ -469,6 +484,13 @@ UOP	:	MINUS LETTER;
 //Some builtins
 EXPORT	:	'export';
 //Tokens for strings
-CONTINUE_LINE	:	('\\' EOL)+{$channel=HIDDEN;};
+CONTINUE_LINE
+	:	('\\' EOL)+{$channel=HIDDEN;};
+ESC_RPAREN
+	:	'\\' RPAREN;
+ESC_LPAREN
+	:	'\\' LPAREN;
+ESC_LT	:	'\\''<';
+ESC_GT	:	'\\''>';
 NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
 NQSTR	:	~('\n'|'\r'|' '|'\t'|'\\'|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE)+;
