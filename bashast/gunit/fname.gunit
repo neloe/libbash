@@ -23,3 +23,4 @@ fname:
 "ab+(gh|i)" -> (STRING ab (MATCH_AT_LEAST_ONE (STRING gh) (STRING i)))
 "ab@(gh|i)" -> (STRING ab (MATCH_EXACTLY_ONE (STRING gh) (STRING i)))
 "ab!(gh|i)" -> (STRING ab (MATCH_NONE (STRING gh) (STRING i)))
+"\"abc\"\'\"\'\"def\"" -> (STRING abc " def)
