@@ -68,9 +68,14 @@ tokens{
 	MATCH_NONE;
 	MATCH_ANY;
 	MATCH_AT_LEAST_ONE;
+	MATCH_PATTERN;
+	MATCH_ANY_EXCEPT;
+	CHARACTER_CLASS;
+	EQUIVALENCE_CLASS;
+	COLLATING_SYMBOL;
 }
 
-start	:	(flcomment! EOL!)? EOL!* list^;
+start	:	(flcomment! EOL!)? EOL!* list^ ;
 flcomment
 	:	BLANK? '#' commentpart*;
 commentpart
@@ -136,7 +141,7 @@ brace
 	:	LBRACE BLANK* braceexp BLANK?RBRACE -> ^(BRACE braceexp);
 braceexp:	commasep|range;
 range	:	DIGIT DOTDOT^ DIGIT
-	|	name DOTDOT^ name;
+	|	LETTER DOTDOT^ LETTER;
 bepart	:	fname
 	|	brace
 	|	var_ref
@@ -249,7 +254,7 @@ arr_var_ref
 	:	name^ LSQUARE! DIGIT+ RSQUARE!;
 //Conditional Expressions
 cond_expr
-	:	LLSQUARE wspace cond wspace RRSQUARE -> ^(KEYWORD_TEST cond)
+	:	LSQUARE LSQUARE wspace cond wspace RSQUARE RSQUARE -> ^(KEYWORD_TEST cond)
 	|	LSQUARE wspace old_cond wspace RSQUARE -> ^(BUILTIN_TEST old_cond)
 	|	TEST wspace old_cond -> ^(BUILTIN_TEST old_cond);
 cond	:	BANG BLANK binary_cond -> ^(NEGATION binary_cond)
@@ -319,7 +324,7 @@ ns_str_part
 	|	res_word_str;
 ns_str_part_no_res
 	:	num
-	|	name|NQSTR|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC|ARITH_ASSIGN|ESC_CHAR;
+	|	name|NQSTR|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|TILDE|INC|DEC|ARITH_ASSIGN|ESC_CHAR|CARET;
 ns_str	:	ns_str_part* -> ^(STRING ns_str_part*);
 dq_str_part
 	:	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK|LEQ|GEQ
@@ -339,9 +344,21 @@ fname_no_res_word
 	|	sqstr -> ^(STRING sqstr)
 	|	SQUOTE SQUOTE -> ^(STRING);
 nqstr_no_res_word
-	:	(extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound+)|(ns_str_part_no_res|SLASH)|pattern_match_trigger)+;
-nqstr	:	(extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound*)|pattern_match_trigger|BANG)+;
-dqstr	:	QUOTE! (extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dq_str_part|pattern_match_trigger|BANG)+ QUOTE!;
+	:	res_word_str (no_res_word_part|str_part_with_pound)+
+	|	no_res_word_part (no_res_word_part|str_part_with_pound)*;
+no_res_word_part
+	:	bracket_pattern_match
+	|	extended_pattern_match
+	|	var_ref
+	|	command_sub
+	|	arithmetic_expansion
+	|	dqstr
+	|	sqstr
+	|	ns_str_part_no_res
+	|	SLASH
+	|	pattern_match_trigger;
+nqstr	:	(bracket_pattern_match|extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound*)|pattern_match_trigger|BANG)+;
+dqstr	:	QUOTE! (bracket_pattern_match|extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dq_str_part|pattern_match_trigger|BANG)+ QUOTE!;
 sqstr	:	SQUOTE!sq_str_part+ SQUOTE!;
 pattern_match_trigger
 	:	LSQUARE
@@ -350,6 +367,19 @@ pattern_match_trigger
 	|	PLUS
 	|	TIMES
 	|	AT;
+bracket_pattern_match
+	:	LSQUARE RSQUARE (BANG|CARET) pattern_match* RSQUARE -> ^(MATCH_ANY_EXCEPT RSQUARE pattern_match*)
+	|	LSQUARE RSQUARE pattern_match* RSQUARE -> ^(MATCH_PATTERN RSQUARE pattern_match*)
+	|	LSQUARE (BANG|CARET) pattern_match+ RSQUARE -> ^(MATCH_ANY_EXCEPT pattern_match+)
+	|	LSQUARE pattern_match+ RSQUARE -> ^(MATCH_PATTERN pattern_match+);
+pattern_match
+	:	pattern_class_match
+	|	str_part str_part_with_pound*;
+pattern_class_match
+	:	LSQUARE COLON NAME COLON RSQUARE -> ^(CHARACTER_CLASS NAME)
+	|	LSQUARE EQUALS pattern_char EQUALS RSQUARE -> ^(EQUIVALENCE_CLASS pattern_char)
+	|	LSQUARE DOT NAME DOT RSQUARE -> ^(COLLATING_SYMBOL NAME);
+pattern_char	:	LETTER|DIGIT|NQCHAR_NO_ALPHANUM|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|DOT|'<'|'>'|SQUOTE|QUOTE;
 extended_pattern_match
 	:	QMARK LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_AT_MOST_ONE fname+)
 	|	TIMES LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_ANY fname+)
@@ -438,8 +468,6 @@ WHILE	:	'while';
 LBRACE	:	'{';
 RBRACE	:	'}';
 TIME	:	'time';
-LLSQUARE:	'[[';
-RRSQUARE:	']]';
 
 //Other special useful symbols
 RPAREN	:	')';
@@ -525,5 +553,5 @@ ESC_GT	:	'\\''>';
 ESC_CHAR:	'\\' (('0'..'7')('0'..'7')('0'..'7')?|'x'('0'..'9'|'a'..'f'|'A'..'F')('0'..'9'|'a'..'f'|'A'..'F')?|'c'.|.);
 NAME	:	(LETTER|'_')(ALPHANUM|'_')+;
 NQCHAR_NO_ALPHANUM
-	:	~('\n'|'\r'|' '|'\t'|'\\'|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE|'a'..'z'|'A'..'Z'|'0'..'9')+;
+	:	~('\n'|'\r'|' '|'\t'|'\\'|CARET|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE|'a'..'z'|'A'..'Z'|'0'..'9')+;
 NQSTR	:	(NQCHAR_NO_ALPHANUM|ALPHANUM)+;
