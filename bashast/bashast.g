@@ -62,6 +62,12 @@ tokens{
 	ARITHMETIC_CONDITION;
 	KEYWORD_TEST;
 	BUILTIN_TEST;
+	MATCH_ANY_EXCEPT;
+	MATCH_EXACTLY_ONE;
+	MATCH_AT_MOST_ONE;
+	MATCH_NONE;
+	MATCH_ANY;
+	MATCH_AT_LEAST_ONE;
 }
 
 start	:	(flcomment! EOL!)? EOL!* list^;
@@ -241,7 +247,7 @@ var_exp	:	var_name WORDOP^ word
 var_name:	num|NAME|TIMES|AT;
 arr_var_ref
 	:	NAME^ LSQUARE! DIGIT+ RSQUARE!;
-//Conditional Expressions
+//Conditiona Expressions
 cond_expr
 	:	LLSQUARE wspace cond wspace RRSQUARE -> ^(KEYWORD_TEST cond)
 	|	LSQUARE wspace old_cond wspace RSQUARE -> ^(BUILTIN_TEST old_cond)
@@ -300,7 +306,7 @@ options{k=1;backtrack=false;}
 	:	DIGIT|NUMBER;
 //A rule for filenames/strings
 res_word_str
-	:	BANG|CASE|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE|TIME;
+	:	CASE|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE|TIME;
 str_part
 	:	ns_str_part
 	|	SLASH;
@@ -313,7 +319,7 @@ ns_str_part
 	|	res_word_str;
 ns_str_part_no_res
 	:	num
-	|	NAME|NQSTR|TIMES|PLUS|EQUALS|PCT|PCTPCT|MINUS|LSQUARE|RSQUARE|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC|ARITH_ASSIGN|QMARK;
+	|	NAME|NQSTR|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC|ARITH_ASSIGN;
 ns_str	:	ns_str_part* -> ^(STRING ns_str_part*);
 dq_str_part
 	:	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK|LEQ|GEQ
@@ -333,10 +339,23 @@ fname_no_res_word
 	|	sqstr -> ^(STRING sqstr)
 	|	SQUOTE SQUOTE -> ^(STRING);
 nqstr_no_res_word
-	:	(var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound+)|(ns_str_part_no_res|SLASH))+;
-nqstr	:	(var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound*))+;
-dqstr	:	QUOTE! (var_ref|command_sub|arithmetic_expansion|dq_str_part)+ QUOTE!;
+	:	(extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound+)|(ns_str_part_no_res|SLASH)|pattern_match_trigger)+;
+nqstr	:	(extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound*)|pattern_match_trigger|BANG)+;
+dqstr	:	QUOTE! (extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dq_str_part|pattern_match_trigger|BANG)+ QUOTE!;
 sqstr	:	SQUOTE!sq_str_part+ SQUOTE!;
+pattern_match_trigger
+	:	LSQUARE
+	|	RSQUARE
+	|	QMARK
+	|	PLUS
+	|	TIMES
+	|	AT;
+extended_pattern_match
+	:	QMARK LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_AT_MOST_ONE fname+)
+	|	TIMES LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_ANY fname+)
+	|	PLUS LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_AT_LEAST_ONE fname+)
+	|	AT LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_EXACTLY_ONE fname+)
+	|	BANG LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_NONE fname+);
 //Arithmetic expansion
 arithmetic_expansion
 	:	DOLLAR! LLPAREN! BLANK!* arithmetic_part BLANK!* RRPAREN!;

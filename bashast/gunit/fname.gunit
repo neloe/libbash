@@ -18,3 +18,8 @@ fname:
 "'asdf\"asdf'" -> (STRING asdf " asdf)
 "\"asdf'asdf\"" -> (STRING asdf ' asdf)
 "!/bin/bash" -> (STRING ! / bin / bash)
+"ab?(g|h)"-> (STRING ab (MATCH_AT_MOST_ONE (STRING g) (STRING h)))
+"ab*(gh|i)" -> (STRING ab (MATCH_ANY (STRING gh) (STRING i)))
+"ab+(gh|i)" -> (STRING ab (MATCH_AT_LEAST_ONE (STRING gh) (STRING i)))
+"ab@(gh|i)" -> (STRING ab (MATCH_EXACTLY_ONE (STRING gh) (STRING i)))
+"ab!(gh|i)" -> (STRING ab (MATCH_NONE (STRING gh) (STRING i)))
