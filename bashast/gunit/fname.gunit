@@ -24,3 +24,8 @@ fname:
 "ab@(gh|i)" -> (STRING ab (MATCH_EXACTLY_ONE (STRING gh) (STRING i)))
 "ab!(gh|i)" -> (STRING ab (MATCH_NONE (STRING gh) (STRING i)))
 "\"abc\"\'\"\'\"def\"" -> (STRING abc " def)
+"my\ name\ is" -> (STRING my \  name \  is)
+"octal\007" -> (STRING octal \007)
+"hex\xaF" -> (STRING hex \xaF)
+"ctrlx\cx" -> (STRING ctrlx \cx)
+"tab\\ttab" -> "(STRING tab \\\t tab)"

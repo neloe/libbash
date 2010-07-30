@@ -136,7 +136,7 @@ brace
 	:	LBRACE BLANK* braceexp BLANK?RBRACE -> ^(BRACE braceexp);
 braceexp:	commasep|range;
 range	:	DIGIT DOTDOT^ DIGIT
-	|	NAME DOTDOT^ NAME;
+	|	name DOTDOT^ name;
 bepart	:	fname
 	|	brace
 	|	var_ref
@@ -158,11 +158,11 @@ compound_comm
 	|	arith_comp
 	|	cond_comp;
 
-for_expr:	FOR BLANK+ NAME (wspace IN BLANK+ word)? semiel DO wspace* clist semiel DONE -> ^(FOR NAME (word)? clist)
+for_expr:	FOR BLANK+ name (wspace IN BLANK+ word)? semiel DO wspace* clist semiel DONE -> ^(FOR name (word)? clist)
 	|	FOR BLANK* LLPAREN EOL? (BLANK* init=arithmetic BLANK*|BLANK+)? (SEMIC (BLANK? fcond=arithmetic BLANK*|BLANK+)? SEMIC|DOUBLE_SEMIC) (BLANK* mod=arithmetic)? wspace* RRPAREN semiel DO wspace clist semiel DONE
 		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $fcond)? ^(FOR_MOD $mod)? clist)
 	;
-sel_expr:	SELECT BLANK+ NAME (wspace IN BLANK+ word)? semiel DO wspace* clist semiel DONE -> ^(SELECT NAME (word)? clist)
+sel_expr:	SELECT BLANK+ name (wspace IN BLANK+ word)? semiel DO wspace* clist semiel DONE -> ^(SELECT name (word)? clist)
 	;
 if_expr	:	IF wspace+ ag=clist BLANK* semiel THEN wspace+ iflist=clist BLANK? semiel EOL* (elif_expr)* (ELSE wspace+ else_list=clist BLANK? semiel EOL*)? FI
 		-> ^(IF $ag $iflist (elif_expr)* ^($else_list)?)
@@ -197,9 +197,9 @@ arith_comp
 cond_comp
 	:	cond_expr -> ^(COMPOUND_COND cond_expr);
 //Variables
-var_def	:	BLANK* NAME LSQUARE BLANK? index BLANK* RSQUARE EQUALS value BLANK* -> ^(EQUALS ^(NAME  index) value)
-	|	BLANK!* NAME EQUALS^ value BLANK!*
-	|	BLANK!* LET! NAME EQUALS^ arithmetic BLANK!*;
+var_def	:	BLANK* name LSQUARE BLANK? index BLANK* RSQUARE EQUALS value BLANK* -> ^(EQUALS ^(name  index) value)
+	|	BLANK!* name EQUALS^ value BLANK!*
+	|	BLANK!* LET! name EQUALS^ arithmetic BLANK!*;
 value	:	DIGIT
 	|	NUMBER
 	|	var_ref
@@ -214,11 +214,11 @@ pos_val	: command_sub
 	|	num
 	|	fname;
 index	:	num
-	|	NAME;
+	|	name;
 //Array variables
 var_ref
 	:	DOLLAR LBRACE BLANK* var_exp BLANK* RBRACE -> ^(VAR_REF var_exp)
-	|	DOLLAR NAME -> ^(VAR_REF NAME)
+	|	DOLLAR name -> ^(VAR_REF name)
 	|	DOLLAR num -> ^(VAR_REF num)
 	|	DOLLAR TIMES -> ^(VAR_REF TIMES)
 	|	DOLLAR AT -> ^(VAR_REF AT)
@@ -244,10 +244,10 @@ var_exp	:	var_name WORDOP^ word
 	|	var_name SLASH ns_str SLASH? -> ^(REPLACE_FIRST var_name ns_str)
 	|	arr_var_ref
 	|	var_name;
-var_name:	num|NAME|TIMES|AT;
+var_name:	num|name|TIMES|AT;
 arr_var_ref
-	:	NAME^ LSQUARE! DIGIT+ RSQUARE!;
-//Conditiona Expressions
+	:	name^ LSQUARE! DIGIT+ RSQUARE!;
+//Conditional Expressions
 cond_expr
 	:	LLSQUARE wspace cond wspace RRSQUARE -> ^(KEYWORD_TEST cond)
 	|	LSQUARE wspace old_cond wspace RSQUARE -> ^(BUILTIN_TEST old_cond)
@@ -319,7 +319,7 @@ ns_str_part
 	|	res_word_str;
 ns_str_part_no_res
 	:	num
-	|	NAME|NQSTR|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC|ARITH_ASSIGN;
+	|	name|NQSTR|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|LLSQUARE|RRSQUARE|TILDE|INC|DEC|ARITH_ASSIGN|ESC_CHAR;
 ns_str	:	ns_str_part* -> ^(STRING ns_str_part*);
 dq_str_part
 	:	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK|LEQ|GEQ
@@ -370,14 +370,14 @@ arithmetic
 primary	:	num
 	|	var_ref
 	|	command_sub
-	|	NAME -> ^(VAR_REF NAME)
+	|	name -> ^(VAR_REF name)
 	|	LPAREN! (arithmetics) RPAREN!;
 post_inc_dec
-	:	NAME BLANK?INC -> ^(POST_INCR NAME)
-	|	NAME BLANK?DEC -> ^(POST_DECR NAME);
+	:	name BLANK?INC -> ^(POST_INCR name)
+	|	name BLANK?DEC -> ^(POST_DECR name);
 pre_inc_dec
-	:	INC BLANK?NAME -> ^(PRE_INCR NAME)
-	|	DEC BLANK?NAME -> ^(PRE_DECR NAME);
+	:	INC BLANK?name -> ^(PRE_INCR name)
+	|	DEC BLANK?name -> ^(PRE_DECR name);
 unary	:	post_inc_dec
 	|	pre_inc_dec
 	|	primary
@@ -403,13 +403,16 @@ logicor	:	logicand (BLANK!* LOGICOR^ BLANK!* logicand)*;
 arithmetic_condition
 	:	cnd=logicor QMARK t=logicor COLON f=logicor -> ^(ARITHMETIC_CONDITION $cnd $t $f);
 arithmetic_assignment
-	:	(NAME BLANK!* (EQUALS^|ARITH_ASSIGN^) BLANK!*)? logicor;
+	:	(name BLANK!* (EQUALS^|ARITH_ASSIGN^) BLANK!*)? logicor;
 //process substitution
 proc_sub:	(dir='<'|dir='>')LPAREN BLANK* clist BLANK* RPAREN -> ^(PROC_SUB $dir clist);
 //the biggie: functions
 function:	FUNCTION BLANK+ fname (BLANK* parens)? wspace compound_comm redirect* -> ^(FUNCTION fname compound_comm redirect*)
 	|	fname BLANK* parens wspace compound_comm redirect* -> ^(FUNCTION["function"] fname compound_comm redirect*);
 parens	:	LPAREN BLANK* RPAREN;
+name	:	NAME
+	|	LETTER
+	|	'_';
 //TOkens
 
 COMMENT
@@ -483,7 +486,6 @@ EOL	:	('\r'?'\n')+ ;
 //some fragments for creating words...
 DIGIT	:	'0'..'9';
 NUMBER	:	DIGIT DIGIT+;
-fragment
 LETTER	:	('a'..'z'|'A'..'Z');
 fragment
 ALPHANUM:	(DIGIT|LETTER);
@@ -519,5 +521,9 @@ ESC_LPAREN
 	:	'\\' LPAREN;
 ESC_LT	:	'\\''<';
 ESC_GT	:	'\\''>';
-NAME	:	(LETTER|'_')(ALPHANUM|'_')*;
-NQSTR	:	~('\n'|'\r'|' '|'\t'|'\\'|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE)+;
+//Handle ANSI C escaped characters: escaped octal, escaped hex, escaped ctrl+ chars, then all others
+ESC_CHAR:	'\\' (('0'..'7')('0'..'7')('0'..'7')?|'x'('0'..'9'|'a'..'f'|'A'..'F')('0'..'9'|'a'..'f'|'A'..'F')?|'c'.|.);
+NAME	:	(LETTER|'_')(ALPHANUM|'_')+;
+NQCHAR_NO_ALPHANUM
+	:	~('\n'|'\r'|' '|'\t'|'\\'|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE|'a'..'z'|'A'..'Z'|'0'..'9')+;
+NQSTR	:	(NQCHAR_NO_ALPHANUM|ALPHANUM)+;
