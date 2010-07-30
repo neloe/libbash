@@ -10,3 +10,7 @@ function:
 "function quit { exit; }" -> (function (STRING quit) (CURRSHELL (LIST (COMMAND (STRING exit)))))
 "function foo() { :; }" -> (function (STRING foo) (CURRSHELL (LIST (COMMAND (STRING :)))))
 "foo() { :; }" -> (function (STRING foo) (CURRSHELL (LIST (COMMAND (STRING :)))))
+
+"function quit { exit; } > /dev/null" -> (function (STRING quit) (CURRSHELL (LIST (COMMAND (STRING exit)))) (REDIR > (STRING / dev / null)))
+"function help { echo hi; } 2> /dev/null" -> (function (STRING help) (CURRSHELL (LIST (COMMAND (STRING echo) (STRING hi)))) (REDIR 2 > (STRING / dev / null)))
+"function help { echo 3; } 2> /dev/null > output" OK
