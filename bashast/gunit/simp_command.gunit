@@ -7,6 +7,6 @@ simple_command:
 "cat results.log > asdf 2> /dev/null" -> (COMMAND (STRING cat) (STRING results . log) (REDIR > (STRING asdf)) (REDIR 2 > (STRING / dev / null)))
 "i=3 g=4 h=18 grep asdf" -> (COMMAND (STRING grep) (STRING asdf) (= i 3) (= g 4) (= h 18))
 "./configure --prefix=/usr/local" -> (COMMAND (STRING . / configure) (STRING -- prefix = / usr / local))
-"[[while" -> (COMMAND (STRING [[ while))
+"[[while" -> (COMMAND (STRING [ [ while))
 "./foobär" -> (COMMAND (STRING . / foobär))
 "cat ~/Documents/todo.txt" -> (COMMAND (STRING cat) (STRING ~ / Documents / todo . txt))

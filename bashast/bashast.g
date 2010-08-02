@@ -257,20 +257,30 @@ cond_expr
 	:	LSQUARE LSQUARE wspace cond wspace RSQUARE RSQUARE -> ^(KEYWORD_TEST cond)
 	|	LSQUARE wspace old_cond wspace RSQUARE -> ^(BUILTIN_TEST old_cond)
 	|	TEST wspace old_cond -> ^(BUILTIN_TEST old_cond);
-cond	:	BANG BLANK binary_cond -> ^(NEGATION binary_cond)
-	|	BANG BLANK unary_cond -> ^(NEGATION unary_cond)
-	|	binary_cond
-	|	unary_cond;
-old_cond:	BANG BLANK binary_old_cond -> ^(NEGATION binary_old_cond)
-	|	BANG BLANK unary_cond -> ^(NEGATION unary_cond)
-	|	binary_old_cond
-	|	unary_cond;
-binary_old_cond
-	:	condpart BLANK!* binary_string_op_old^ BLANK!? condpart(BLANK!* UOP^ BLANK!*cond)?
-	|	num BLANK!+ BOP^ BLANK!+ num(BLANK!? UOP^ BLANK!* cond)?;
-binary_cond
-	:	condpart BLANK!* bstrop^ BLANK!? condpart(BLANK!*(LOGICOR^|LOGICAND^) BLANK!*cond)?
-	|	num BLANK!+ BOP^ BLANK!+ num(BLANK!?(LOGICOR^|LOGICAND^) BLANK!* cond)?;
+cond_primary
+	:	LPAREN! BLANK!* cond BLANK!* RPAREN!
+	|	cond_binary
+	|	cond_unary
+	|	fname;
+cond_binary
+	:	condpart BLANK!* bstrop^ BLANK!? condpart;
+cond_unary
+	:	UOP^ BLANK!+ condpart;
+old_cond_primary
+	:	LPAREN! BLANK!* old_cond BLANK!* RPAREN!
+	|	old_cond_binary
+	|	old_cond_unary
+	|	fname;
+old_cond_binary
+	:	condpart BLANK!* binary_string_op_old^ BLANK!? condpart;
+old_cond_unary
+	:	UOP^ BLANK!+ condpart;
+cond	:	(negate_primary|cond_primary) (BLANK!* (LOGICOR^|LOGICAND^) BLANK!* cond)?;
+old_cond:	(negate_old_primary|old_cond_primary) (BLANK!* (LOGICOR^|LOGICAND^) BLANK!* old_cond)?;
+negate_primary
+	:	BANG BLANK+ cond_primary -> ^(NEGATION cond_primary);
+negate_old_primary
+	:	BANG BLANK+ old_cond_primary -> ^(NEGATION old_cond_primary);
 bstrop	:	BOP
 	|	EQUALS EQUALS -> OP["=="]
 	|	EQUALS
