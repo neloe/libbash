@@ -109,4 +109,4 @@ arithmetics:
 start:
 "echo $(( 3 + 2 ))" -> (LIST (COMMAND (STRING echo) (STRING (+ 3 2))))
 "echo $((++i))" -> (LIST (COMMAND (STRING echo) (STRING (PRE_INCR i))))
-"echo \"The solution is: $(( 3+2 ))\""-> (LIST (COMMAND (STRING echo) (STRING The   solution   is :   (+ 3 2))))
+"echo \"The solution is: $(( 3+2 ))\""-> (LIST (COMMAND (STRING echo) (STRING (QUOTED_STRING The   solution   is :   (+ 3 2)))))

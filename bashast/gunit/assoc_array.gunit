@@ -1,5 +1,5 @@
 gunit bashast;
 
 var_def:
-"arr[foo]=\"asdf\"" -> (= (arr foo) (STRING asdf))
+"arr[foo]=\"asdf\"" -> (= (arr foo) (STRING (QUOTED_STRING asdf)))
 "arr=(a b [4]=c)" -> (= arr (ARRAY (STRING a) (STRING b) (= 4 (STRING c))))

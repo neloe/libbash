@@ -8,4 +8,4 @@ o Hello\
 
 "sed -i \
 	-e 's/three/\
-  four/'" -> (LIST (COMMAND (STRING sed) (STRING -i) (STRING -e) (STRING s / three /    four /)))
+  four/'" -> (LIST (COMMAND (STRING sed) (STRING -i) (STRING -e) (STRING (QUOTED_STRING s / three /    four /))))
