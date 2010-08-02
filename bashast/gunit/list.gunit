@@ -18,5 +18,5 @@ cp arch/x86_64/boot/bzImage /boot/kernel" -> (LIST (COMMAND (STRING make)) (COMM
 
 "a=asdf
 b=three
-echo \"a b\"" -> (LIST (= a (STRING asdf)) (= b (STRING three)) (COMMAND (STRING echo) (STRING a   b)))
+echo \"a b\"" -> (LIST (= a (STRING asdf)) (= b (STRING three)) (COMMAND (STRING echo) (STRING (DOUBLE_QUOTED_STRING a   b))))
 "echo one && (echo two || echo three)" -> (LIST (&& (COMMAND (STRING echo) (STRING one)) (SUBSHELL (LIST (|| (COMMAND (STRING echo) (STRING two)) (COMMAND (STRING echo) (STRING three)))))))

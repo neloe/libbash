@@ -73,6 +73,8 @@ tokens{
 	CHARACTER_CLASS;
 	EQUIVALENCE_CLASS;
 	COLLATING_SYMBOL;
+	SINGLE_QUOTED_STRING;
+	DOUBLE_QUOTED_STRING;
 }
 
 start	:	(flcomment! EOL!)? EOL!* list^ ;
@@ -342,17 +344,9 @@ dq_str_part
 sq_str_part
 	:	str_part_with_pound
 	|	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|QUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|DOLLAR|TICK|BOP|UOP;
-fname	:	nqstr -> ^(STRING nqstr)
-	|	dqstr -> ^(STRING dqstr)
-	|	QUOTE QUOTE -> ^(STRING)
-	|	sqstr -> ^(STRING sqstr)
-	|	SQUOTE SQUOTE -> ^(STRING);
+fname	:	nqstr -> ^(STRING nqstr);
 fname_no_res_word
-	:	nqstr_no_res_word -> ^(STRING nqstr_no_res_word)
-	|	dqstr -> ^(STRING dqstr)
-	|	QUOTE QUOTE -> ^(STRING)
-	|	sqstr -> ^(STRING sqstr)
-	|	SQUOTE SQUOTE -> ^(STRING);
+	:	nqstr_no_res_word -> ^(STRING nqstr_no_res_word);
 nqstr_no_res_word
 	:	res_word_str (no_res_word_part|str_part_with_pound)+
 	|	no_res_word_part (no_res_word_part|str_part_with_pound)*;
@@ -368,8 +362,17 @@ no_res_word_part
 	|	SLASH
 	|	pattern_match_trigger;
 nqstr	:	(bracket_pattern_match|extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound*)|pattern_match_trigger|BANG)+;
-dqstr	:	QUOTE! (bracket_pattern_match|extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dq_str_part|pattern_match_trigger|BANG)+ QUOTE!;
-sqstr	:	SQUOTE!sq_str_part+ SQUOTE!;
+dqstr	:	QUOTE dqstr_part* QUOTE -> ^(DOUBLE_QUOTED_STRING dqstr_part*);
+dqstr_part
+	:	bracket_pattern_match
+	|	extended_pattern_match
+	|	var_ref
+	|	command_sub
+	|	arithmetic_expansion
+	|	dq_str_part
+	|	pattern_match_trigger
+	|	BANG;
+sqstr	:	SQUOTE sq_str_part* SQUOTE -> ^(SINGLE_QUOTED_STRING sq_str_part*);
 pattern_match_trigger
 	:	LSQUARE
 	|	RSQUARE

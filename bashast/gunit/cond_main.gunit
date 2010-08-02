@@ -19,8 +19,8 @@ gunit bashast;
 
 cond_expr:
 "[[ -a this/is.afile ]]" -> (KEYWORD_TEST (-a (STRING this / is . afile)))
-"[ -n \"yar53\" ]" -> (BUILTIN_TEST (-n (STRING yar53)))
+"[ -n \"yar53\" ]" -> (BUILTIN_TEST (-n (STRING (DOUBLE_QUOTED_STRING yar53))))
 "test 5 -eq 6" -> (BUILTIN_TEST (-eq 5 6))
-"[[ \"asdf\" != \"boo\" && -a filename ]]" -> (KEYWORD_TEST (&& (!= (STRING asdf) (STRING boo)) (-a (STRING filename))))
+"[[ \"asdf\" != \"boo\" && -a filename ]]" -> (KEYWORD_TEST (&& (!= (STRING (DOUBLE_QUOTED_STRING asdf)) (STRING (DOUBLE_QUOTED_STRING boo))) (-a (STRING filename))))
 "[[ true ]]" -> (KEYWORD_TEST (STRING true))
 "[[ true && (false || three) ]]" -> (KEYWORD_TEST (&& (STRING true) (|| (STRING false) (STRING three))))
