@@ -22,3 +22,5 @@ cond_expr:
 "[ -n \"yar53\" ]" -> (BUILTIN_TEST (-n (STRING yar53)))
 "test 5 -eq 6" -> (BUILTIN_TEST (-eq 5 6))
 "[[ \"asdf\" != \"boo\" && -a filename ]]" -> (KEYWORD_TEST (&& (!= (STRING asdf) (STRING boo)) (-a (STRING filename))))
+"[[ true ]]" -> (KEYWORD_TEST (STRING true))
+"[[ true && (false || three) ]]" -> (KEYWORD_TEST (&& (STRING true) (|| (STRING false) (STRING three))))
