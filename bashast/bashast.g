@@ -78,10 +78,11 @@ tokens{
 }
 
 start	:	(flcomment! EOL!)? EOL!* list^ ;
+//Because the comment token doesn't handle the first comment in a file if it's on the first line, have a parser rule for it
 flcomment
 	:	BLANK? '#' commentpart*;
 commentpart
-	:	nqstr|BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|PIPE|COMMA|SQUOTE|QUOTE|'<'|'>';
+	:	nqstr|BLANK|LBRACE|RBRACE|SEMIC|DOUBLE_SEMIC|TICK|LPAREN|RPAREN|LLPAREN|RRPAREN|PIPE|COMMA|SQUOTE|QUOTE|LT|GT;
 list	:	list_level_2 BLANK* (';'|'&'|EOL)? -> ^(LIST list_level_2);
 clist
 options{greedy=false;}
@@ -95,15 +96,18 @@ pipeline
 	|	time?('!' BLANK!*)? BLANK!* command^ (BLANK!* PIPE^ BLANK!* command)*;
 time	:	TIME^ BLANK!+ timearg?;
 timearg	:	'-p' BLANK!+;
+//The structure of a command in bash
 command
 	:	EXPORT^ var_def+
-	|	compound_comm
+	|	compound_command
 	|	simple_command;
+//Simple bash commands
 simple_command
 	:	var_def+ bash_command^ redirect*
 	|	bash_command^ redirect*;
 bash_command
 	:	fname_no_res_word (BLANK+ arg)* -> ^(COMMAND fname_no_res_word arg*);
+//An argument to a command
 arg
 	:	brace_expansion
 	|	var_ref
@@ -111,49 +115,52 @@ arg
 	|	res_word_str -> ^(STRING res_word_str)
 	|	command_sub
 	|	var_ref;
-redirect:	BLANK!* hsop^ BLANK!* fname
-	|	BLANK!* hdop^ BLANK!* fname EOL! heredoc
+redirect:	BLANK!* here_string_op^ BLANK!* fname
+	|	BLANK!* here_doc_op^ BLANK!* fname EOL! heredoc
 	|	BLANK* redir_op BLANK* DIGIT MINUS? -> ^(REDIR redir_op DIGIT MINUS?)
 	|	BLANK* redir_op BLANK* redir_dest -> ^(REDIR redir_op redir_dest)
 	|	BLANK!* proc_sub;
-
-heredoc	:	(fname EOL!)*;
 redir_dest
 	:	fname //path to a file
 	|	file_desc_as_file; //handles file descriptors0
 file_desc_as_file
 	:	AMP DIGIT -> FILE_DESCRIPTOR[$DIGIT]
 	|	AMP DIGIT MINUS -> FILE_DESCRIPTOR_MOVE[$DIGIT];
-hsop	:	HERE_STRING_OP;
-hdop	:	LSHIFT MINUS -> OP["<<-"]
+heredoc	:	(fname EOL!)*;
+here_string_op
+	:	HERE_STRING_OP;
+here_doc_op
+	:	LSHIFT MINUS -> OP["<<-"]
 	|	LSHIFT -> OP["<<"];
-redir_op:	'&''<' -> OP["&<"]
-	|	'>''&' -> OP[">&"]
-	|	'<''&' -> OP["<&"]
-	|	'<''>' -> OP["<>"]
+redir_op:	AMP LT -> OP["&<"]
+	|	GT AMP -> OP[">&"]
+	|	LT AMP -> OP["<&"]
+	|	LT GT -> OP["<>"]
 	|	RSHIFT -> OP[">>"]
-	|	'&''>' -> OP["&>"]
-	|	'&'RSHIFT -> OP ["&>>"]
-	|	'<'
-	|	'>'
+	|	AMP GT -> OP["&>"]
+	|	AMP RSHIFT -> OP ["&>>"]
+	|	LT
+	|	GT
 	|	DIGIT redir_op;
 brace_expansion
 	:	pre=fname? brace post=fname? -> ^(BRACE_EXP ($pre)? brace ($post)?);
 brace
-	:	LBRACE BLANK* braceexp BLANK?RBRACE -> ^(BRACE braceexp);
-braceexp:	commasep|range;
+	:	LBRACE BLANK* brace_expansion_inside BLANK?RBRACE -> ^(BRACE brace_expansion_inside);
+brace_expansion_inside
+	:	commasep|range;
 range	:	DIGIT DOTDOT^ DIGIT
 	|	LETTER DOTDOT^ LETTER;
-bepart	:	fname
+brace_expansion_part
+	:	fname
 	|	brace
 	|	var_ref
 	|	command_sub;
-commasep:	bepart(COMMA! bepart)+;
+commasep:	brace_expansion_part(COMMA! brace_expansion_part)+;
 command_sub
 	:	DOLLAR LPAREN BLANK* pipeline BLANK? RPAREN -> ^(COMMAND_SUB pipeline)
 	|	TICK BLANK* pipeline BLANK? TICK -> ^(COMMAND_SUB pipeline) ;
 //compound commands
-compound_comm
+compound_command
 	:	for_expr
 	|	sel_expr
 	|	if_expr
@@ -162,9 +169,9 @@ compound_comm
 	|	case_expr
 	|	subshell
 	|	currshell
-	|	arith_comp
-	|	cond_comp;
-
+	|	arith_comparison
+	|	cond_comparison;
+//Expressions allowed inside a compound command
 for_expr:	FOR BLANK+ name (wspace IN BLANK+ word)? semiel DO wspace* clist semiel DONE -> ^(FOR name (word)? clist)
 	|	FOR BLANK* LLPAREN EOL? (BLANK* init=arithmetic BLANK*|BLANK+)? (SEMIC (BLANK? fcond=arithmetic BLANK*|BLANK+)? SEMIC|DOUBLE_SEMIC) (BLANK* mod=arithmetic)? wspace* RRPAREN semiel DO wspace clist semiel DONE
 		-> ^(FOR ^(FOR_INIT $init)? ^(FOR_COND $fcond)? ^(FOR_MOD $mod)? clist)
@@ -191,27 +198,33 @@ options{greedy=false;}
 	|	wspace* (LPAREN BLANK*)? pattern (BLANK? PIPE BLANK* pattern)* BLANK* RPAREN wspace* DOUBLE_SEMIC
 		-> ^(CASE_PATTERN pattern+)
 	;
+//the last case can have a slightly different structure than the rest; this accounts for that
 last_case
 options{greedy=false;}
 	:	wspace* (LPAREN BLANK*)? pattern (BLANK* PIPE BLANK? pattern)* BLANK* RPAREN wspace* clist? (wspace* DOUBLE_SEMIC|(BLANK* EOL)+)
 		-> ^(CASE_PATTERN pattern+ clist?)
 	;
+//A grouping of commands executed in a subshell
 subshell:	LPAREN wspace? clist (BLANK* SEMIC)? (BLANK* EOL)* BLANK* RPAREN -> ^(SUBSHELL clist);
+//A grouping of commands executed in the current shell
 currshell
 	:	LBRACE wspace clist semiel RBRACE -> ^(CURRSHELL clist);
-arith_comp
+//comparison using arithmetic
+arith_comparison
 	:	LLPAREN wspace? arithmetic wspace? RRPAREN -> ^(COMPOUND_ARITH arithmetic);
-cond_comp
+cond_comparison
 	:	cond_expr -> ^(COMPOUND_COND cond_expr);
 //Variables
+//Defining a variable
 var_def	:	BLANK* name LSQUARE BLANK? index BLANK* RSQUARE EQUALS value BLANK* -> ^(EQUALS ^(name  index) value)
 	|	BLANK!* name EQUALS^ value BLANK!*
 	|	BLANK!* LET! name EQUALS^ arithmetic BLANK!*;
-value	:	DIGIT
-	|	NUMBER
+//Possible values of a variable
+value	:	num
 	|	var_ref
 	|	fname
 	|	LPAREN! wspace!? arr_val RPAREN!;
+//allow the parser to create array variables
 arr_val	:
 	|	(ag+=val wspace?)+ -> ^(ARRAY $ag+);
 val	:	'['!BLANK!*index BLANK!?']'!EQUALS^ pos_val
@@ -220,9 +233,10 @@ pos_val	: command_sub
 	|	var_ref
 	|	num
 	|	fname;
+//possible indexes for the variable.  Names are used when it acts more like a map/hash than an array
 index	:	num
 	|	name;
-//Array variables
+//Referencing a variable (different possible ways/special parameters)
 var_ref
 	:	DOLLAR LBRACE BLANK* var_exp BLANK* RBRACE -> ^(VAR_REF var_exp)
 	|	DOLLAR name -> ^(VAR_REF name)
@@ -234,6 +248,7 @@ var_ref
 	|	DOLLAR MINUS -> ^(VAR_REF MINUS)
 	|	DOLLAR BANG -> ^(VAR_REF BANG)
 	|	DOLLAR '_' -> ^(VAR_REF '_');
+//Variable expansions
 var_exp	:	var_name WORDOP^ word
 	|	var_name COLON os=num (COLON len=num)? -> ^(OFFSET var_name $os ^($len)?)
 	|	BANG^ var_name (TIMES|AT)
@@ -251,59 +266,65 @@ var_exp	:	var_name WORDOP^ word
 	|	var_name SLASH ns_str SLASH? -> ^(REPLACE_FIRST var_name ns_str)
 	|	arr_var_ref
 	|	var_name;
+//Allowable variable names in the variable expansion
 var_name:	num|name|TIMES|AT;
+//Referencing an array variable
 arr_var_ref
 	:	name^ LSQUARE! DIGIT+ RSQUARE!;
 //Conditional Expressions
 cond_expr
-	:	LSQUARE LSQUARE wspace cond wspace RSQUARE RSQUARE -> ^(KEYWORD_TEST cond)
-	|	LSQUARE wspace old_cond wspace RSQUARE -> ^(BUILTIN_TEST old_cond)
-	|	TEST wspace old_cond -> ^(BUILTIN_TEST old_cond);
+	:	LSQUARE LSQUARE wspace keyword_cond wspace RSQUARE RSQUARE -> ^(KEYWORD_TEST keyword_cond)
+	|	LSQUARE wspace builtin_cond wspace RSQUARE -> ^(BUILTIN_TEST builtin_cond)
+	|	TEST wspace builtin_cond-> ^(BUILTIN_TEST builtin_cond);
 cond_primary
-	:	LPAREN! BLANK!* cond BLANK!* RPAREN!
-	|	cond_binary
-	|	cond_unary
+	:	LPAREN! BLANK!* keyword_cond BLANK!* RPAREN!
+	|	keyword_cond_binary
+	|	keyword_cond_unary
 	|	fname;
-cond_binary
-	:	condpart BLANK!* bstrop^ BLANK!? condpart;
-cond_unary
-	:	UOP^ BLANK!+ condpart;
-old_cond_primary
-	:	LPAREN! BLANK!* old_cond BLANK!* RPAREN!
-	|	old_cond_binary
-	|	old_cond_unary
+keyword_cond_binary
+	:	cond_part BLANK!* binary_str_op_keyword^ BLANK!? cond_part;
+keyword_cond_unary
+	:	UOP^ BLANK!+ cond_part;
+builtin_cond_primary
+	:	LPAREN! BLANK!* builtin_cond BLANK!* RPAREN!
+	|	builtin_cond_binary
+	|	builtin_cond_unary
 	|	fname;
-old_cond_binary
-	:	condpart BLANK!* binary_string_op_old^ BLANK!? condpart;
-old_cond_unary
-	:	UOP^ BLANK!+ condpart;
-cond	:	(negate_primary|cond_primary) (BLANK!* (LOGICOR^|LOGICAND^) BLANK!* cond)?;
-old_cond:	(negate_old_primary|old_cond_primary) (BLANK!* (LOGICOR^|LOGICAND^) BLANK!* old_cond)?;
+builtin_cond_binary
+	:	cond_part BLANK!* binary_string_op_builtin^ BLANK!? cond_part;
+builtin_cond_unary
+	:	UOP^ BLANK!+ cond_part;
+keyword_cond
+	:	(negate_primary|cond_primary) (BLANK!* (LOGICOR^|LOGICAND^) BLANK!* keyword_cond)?;
+builtin_cond
+	:	(negate_builtin_primary|builtin_cond_primary) (BLANK!* (LOGICOR^|LOGICAND^) BLANK!* builtin_cond)?;
 negate_primary
 	:	BANG BLANK+ cond_primary -> ^(NEGATION cond_primary);
-negate_old_primary
-	:	BANG BLANK+ old_cond_primary -> ^(NEGATION old_cond_primary);
-bstrop	:	BOP
+negate_builtin_primary
+	:	BANG BLANK+ builtin_cond_primary -> ^(NEGATION builtin_cond_primary);
+binary_str_op_keyword
+	:	BOP
 	|	EQUALS EQUALS -> OP["=="]
 	|	EQUALS
 	|	BANG EQUALS -> OP["!="]
-	|	'<'
-	|	'>';
-binary_string_op_old
+	|	LT
+	|	GT;
+binary_string_op_builtin
 	:	BOP
 	|	EQUALS
 	|	BANG EQUALS -> OP["!="]
 	|	ESC_LT
 	|	ESC_GT;
 unary_cond
-	:	UOP^ BLANK! condpart;
-condpart:	brace_expansion
+	:	UOP^ BLANK! cond_part;
+//Allowable parts of conditions
+cond_part:	brace_expansion
 	|	var_ref
 	|	res_word_str -> ^(STRING res_word_str)
 	|	num
 	|	fname
 	|	arithmetic;
-//Rules for tokens.
+//Rules for whitespace/line endings
 wspace	:	BLANK+|EOL;
 semiel	:	(';'|EOL) BLANK*;
 
@@ -324,32 +345,43 @@ options{k=1;backtrack=false;}
 //A rule for filenames/strings
 res_word_str
 	:	CASE|DO|DONE|ELIF|ELSE|ESAC|FI|FOR|FUNCTION|IF|IN|SELECT|THEN|UNTIL|WHILE|TIME;
+//Any allowable part of a string, including slashes, no pounds
 str_part
 	:	ns_str_part
 	|	SLASH;
+//Any allowable part of a string, with pounds
 str_part_with_pound
 	:	str_part
 	|	POUND
 	|	POUNDPOUND;
+//Parts of strings, no slashes
 ns_str_part
 	:	ns_str_part_no_res
 	|	res_word_str;
+//Parts of strings, no slashes, no reserved words
 ns_str_part_no_res
 	:	num
 	|	name|NQSTR|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|TILDE|INC|DEC|ARITH_ASSIGN|ESC_CHAR|CARET;
+//strings with no slashes, used in certain variable expansions
 ns_str	:	ns_str_part* -> ^(STRING ns_str_part*);
+//Allowable parts of double quoted strings
 dq_str_part
-	:	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK|LEQ|GEQ
+	:	BLANK|EOL|AMP|LOGICAND|LOGICOR|LT|GT|PIPE|SQUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|TICK|LEQ|GEQ
 	|	str_part_with_pound;
+//Allowable parts of single quoted strings
 sq_str_part
 	:	str_part_with_pound
-	|	BLANK|EOL|AMP|LOGICAND|LOGICOR|'<'|'>'|PIPE|QUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|DOLLAR|TICK|BOP|UOP;
+	|	BLANK|EOL|AMP|LOGICAND|LOGICOR|LT|GT|PIPE|QUOTE|SEMIC|COMMA|LPAREN|RPAREN|LLPAREN|RRPAREN|DOUBLE_SEMIC|LBRACE|RBRACE|DOLLAR|TICK|BOP|UOP;
+//Generic strings/filenames.
 fname	:	nqstr -> ^(STRING nqstr);
+//A string that is NOT a bash reserved word
 fname_no_res_word
 	:	nqstr_no_res_word -> ^(STRING nqstr_no_res_word);
+//No quoted string, no reserved words
 nqstr_no_res_word
 	:	res_word_str (no_res_word_part|str_part_with_pound)+
 	|	no_res_word_part (no_res_word_part|str_part_with_pound)*;
+//parts of strings, not including reserved word parts
 no_res_word_part
 	:	bracket_pattern_match
 	|	extended_pattern_match
@@ -361,7 +393,9 @@ no_res_word_part
 	|	ns_str_part_no_res
 	|	SLASH
 	|	pattern_match_trigger;
+//non-quoted string rule, allows expansions
 nqstr	:	(bracket_pattern_match|extended_pattern_match|var_ref|command_sub|arithmetic_expansion|dqstr|sqstr|(str_part str_part_with_pound*)|pattern_match_trigger|BANG)+;
+//double quoted string rule, allows expansions
 dqstr	:	QUOTE dqstr_part* QUOTE -> ^(DOUBLE_QUOTED_STRING dqstr_part*);
 dqstr_part
 	:	bracket_pattern_match
@@ -372,7 +406,9 @@ dqstr_part
 	|	dq_str_part
 	|	pattern_match_trigger
 	|	BANG;
+//single quoted string rule, no expansions
 sqstr	:	SQUOTE sq_str_part* SQUOTE -> ^(SINGLE_QUOTED_STRING sq_str_part*);
+//certain tokens that trigger pattern matching
 pattern_match_trigger
 	:	LSQUARE
 	|	RSQUARE
@@ -380,19 +416,25 @@ pattern_match_trigger
 	|	PLUS
 	|	TIMES
 	|	AT;
+//Pattern matching using brackets
 bracket_pattern_match
 	:	LSQUARE RSQUARE (BANG|CARET) pattern_match* RSQUARE -> ^(MATCH_ANY_EXCEPT RSQUARE pattern_match*)
 	|	LSQUARE RSQUARE pattern_match* RSQUARE -> ^(MATCH_PATTERN RSQUARE pattern_match*)
 	|	LSQUARE (BANG|CARET) pattern_match+ RSQUARE -> ^(MATCH_ANY_EXCEPT pattern_match+)
 	|	LSQUARE pattern_match+ RSQUARE -> ^(MATCH_PATTERN pattern_match+);
+//allowable patterns with bracket pattern matching
 pattern_match
 	:	pattern_class_match
 	|	str_part str_part_with_pound*;
+//special class patterns to match: [:alpha:] etc
 pattern_class_match
 	:	LSQUARE COLON NAME COLON RSQUARE -> ^(CHARACTER_CLASS NAME)
 	|	LSQUARE EQUALS pattern_char EQUALS RSQUARE -> ^(EQUIVALENCE_CLASS pattern_char)
 	|	LSQUARE DOT NAME DOT RSQUARE -> ^(COLLATING_SYMBOL NAME);
-pattern_char	:	LETTER|DIGIT|NQCHAR_NO_ALPHANUM|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|DOT|'<'|'>'|SQUOTE|QUOTE;
+//Characters allowed in matching equivalence classes
+pattern_char
+	:	LETTER|DIGIT|NQCHAR_NO_ALPHANUM|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|DOT|LT|GT|SQUOTE|QUOTE;
+//extended pattern matching
 extended_pattern_match
 	:	QMARK LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_AT_MOST_ONE fname+)
 	|	TIMES LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_ANY fname+)
@@ -405,11 +447,13 @@ arithmetic_expansion
 arithmetic_part
 	:	arithmetics
 	|	arithmetic;
+//The comma operator for arithmetic expansions
 arithmetics
 	:	arithmetic (BLANK!* COMMA! BLANK!* arithmetic)*;
 arithmetic
 	:	arithmetic_condition
 	|	arithmetic_assignment;
+//The base of the arithmetic operator.  Used for order of operations
 primary	:	num
 	|	var_ref
 	|	command_sub
@@ -433,7 +477,7 @@ exponential
 tdm	:	exponential (BLANK!*(TIMES^|SLASH^|PCT^)BLANK!* exponential)*;
 addsub	:	tdm (BLANK!* (PLUS^|MINUS^)BLANK!* tdm)*;
 shifts	:	addsub (BLANK!* (LSHIFT^|RSHIFT^) BLANK!* addsub)*;
-compare	:	shifts (BLANK!* (LEQ^|GEQ^|'<'^|'>'^)BLANK!* shifts)?;
+compare	:	shifts (BLANK!* (LEQ^|GEQ^|LT^|GT^)BLANK!* shifts)?;
 bitwiseand
 	:	compare (BLANK!* AMP^ BLANK!* compare)*;
 bitwisexor
@@ -448,15 +492,18 @@ arithmetic_condition
 arithmetic_assignment
 	:	(name BLANK!* (EQUALS^|ARITH_ASSIGN^) BLANK!*)? logicor;
 //process substitution
-proc_sub:	(dir='<'|dir='>')LPAREN BLANK* clist BLANK* RPAREN -> ^(PROC_SUB $dir clist);
+proc_sub:	(dir=LT|dir=GT)LPAREN BLANK* clist BLANK* RPAREN -> ^(PROC_SUB $dir clist);
 //the biggie: functions
-function:	FUNCTION BLANK+ fname (BLANK* parens)? wspace compound_comm redirect* -> ^(FUNCTION fname compound_comm redirect*)
-	|	fname BLANK* parens wspace compound_comm redirect* -> ^(FUNCTION["function"] fname compound_comm redirect*);
+function:	FUNCTION BLANK+ fname (BLANK* parens)? wspace compound_command redirect* -> ^(FUNCTION fname compound_command redirect*)
+	|	fname BLANK* parens wspace compound_command redirect* -> ^(FUNCTION["function"] fname compound_command redirect*);
 parens	:	LPAREN BLANK* RPAREN;
 name	:	NAME
 	|	LETTER
 	|	'_';
-//TOkens
+
+//****************
+// TOKENS/LEXER RULES
+//****************
 
 COMMENT
     :  (BLANK|EOL) '#' ~('\n'|'\r')* {$channel=HIDDEN;}
@@ -566,5 +613,5 @@ ESC_GT	:	'\\''>';
 ESC_CHAR:	'\\' (('0'..'7')('0'..'7')('0'..'7')?|'x'('0'..'9'|'a'..'f'|'A'..'F')('0'..'9'|'a'..'f'|'A'..'F')?|'c'.|.);
 NAME	:	(LETTER|'_')(ALPHANUM|'_')+;
 NQCHAR_NO_ALPHANUM
-	:	~('\n'|'\r'|' '|'\t'|'\\'|CARET|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|COMMA|DOT|'<'|'>'|SQUOTE|QUOTE|'a'..'z'|'A'..'Z'|'0'..'9')+;
+	:	~('\n'|'\r'|' '|'\t'|'\\'|CARET|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|DOT|LT|GT|SQUOTE|QUOTE|'a'..'z'|'A'..'Z'|'0'..'9')+;
 NQSTR	:	(NQCHAR_NO_ALPHANUM|ALPHANUM)+;

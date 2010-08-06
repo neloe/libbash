@@ -1,6 +1,6 @@
 gunit bashast;
 
-cond_comp:
+cond_comparison:
 "[[ -a this/is.afile ]]" -> (COMPOUND_COND (KEYWORD_TEST (-a (STRING this / is . afile))))
 "[[ -a this/is.afile]]" FAIL
 "[[-a this/is.afile ]]" FAIL
@@ -10,7 +10,7 @@ cond_comp:
 "[[ asdf > qwert ]]" -> (COMPOUND_COND (KEYWORD_TEST (> (STRING asdf) (STRING qwert))))
 "[ asdf \> qwert ]" -> (COMPOUND_COND (BUILTIN_TEST (\> (STRING asdf) (STRING qwert))))
 
-arith_comp:
+arith_comparison:
 "((5+3))" -> (COMPOUND_ARITH (+ 5 3))
 "(( 5+3 ))" -> (COMPOUND_ARITH (+ 5 3))
 
