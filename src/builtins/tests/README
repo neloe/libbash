@@ -1,0 +1,10 @@
+For right now, in order to compile these unit tests:
+- Make sure the include path for UnitTest++ is in default path
+*or*
+- Make sure the include path for UnitTest++ is in CPLUS_INCLUDE
+
+ALSO
+
+-Make sure the link library for UnitTest++ is in default path
+*or*
+- Make sure the link library for UnitTest++ is in LIBRARY_PATH
