@@ -20,8 +20,13 @@
 ###############################################
 include doxygen.am
 
+ACLOCAL_AMFLAGS = -I m4
+
 TESTS = bashast/gunit/runtests.sh
 SH_LOG_COMPILER = /bin/bash
+
+lib_LTLIBRARIES = libcppbash.la
+libcppbash_la_SOURCES = src/cppbash_builtin.cpp
 
 coding_standard.pdf: coding_standard/coding_standard.tex
 	@PDFLATEX@ coding_standard/coding_standard.tex 2&>1 > /dev/null

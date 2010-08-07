@@ -16,11 +16,14 @@
 #along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 ##############################################
 
+AC_CONFIG_MACRO_DIR([m4])
 AC_INIT([libbash], [0.1],[powerofazure@gmail.com])
 AM_INIT_AUTOMAKE([parallel-tests])
 AC_PREREQ([2.65])
 AC_PROG_CXX
-AC_PROG_RANLIB
+LT_INIT
+AC_PROG_LIBTOOL
+AM_PROG_LIBTOOL
 AC_PATH_PROG([JAVA],[java],"no")
 if test "$JAVA" = "no"; then
 	AC_MSG_ERROR([No java executable found])
