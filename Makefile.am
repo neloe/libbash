@@ -1,4 +1,4 @@
-#############################################
+###############################################
 #Copyright 2010 Nathan Eloe
 #
 #This file is part of libbash.
@@ -23,10 +23,20 @@ include doxygen.am
 ACLOCAL_AMFLAGS = -I m4
 
 TESTS = bashast/gunit/runtests.sh
+TEST_EXTENSIONS= .sh
 SH_LOG_COMPILER = /bin/bash
+
+if HAVE_GTEST
+TESTS += builtin_unittests
+check_PROGRAMS = builtin_unittests
+builtin_unittests_SOURCES = src/builtins/tests/run_tests.cpp
+builtin_unittests_SOURCES += src/builtins/tests/echo_tests.cpp
+builtin_unittests_LDADD = ${GTEST_LIBS} libcppbash.la
+endif
 
 lib_LTLIBRARIES = libcppbash.la
 libcppbash_la_SOURCES = src/cppbash_builtin.cpp
+libcppbash_la_SOURCES += src/builtins/echo_builtin.cpp
 
 coding_standard.pdf: coding_standard/coding_standard.tex
 	@PDFLATEX@ coding_standard/coding_standard.tex 2&>1 > /dev/null
@@ -37,5 +47,4 @@ grammar.run: bashast.g
 
 bashast.g: bashast/bashast.g
 	sed -e 's/CommonTree/pANTLR3_BASE_TREE/g' -e 's/Java/C/g' $< > $@
-
 

@@ -18,7 +18,7 @@
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_INIT([libbash], [0.1],[powerofazure@gmail.com])
-AM_INIT_AUTOMAKE([parallel-tests])
+AM_INIT_AUTOMAKE([parallel-tests subdir-objects])
 AC_PREREQ([2.65])
 AC_PROG_CXX
 LT_INIT
@@ -28,6 +28,7 @@ AC_PATH_PROG([JAVA],[java],"no")
 if test "$JAVA" = "no"; then
 	AC_MSG_ERROR([No java executable found])
 fi
+GTEST_LIB_CHECK(,[:],[:])
 AC_ARG_WITH(antlr, [],with_antlr=$withval,with_antlr=jc)
 if test "$with_antlr" = "jc"; then
 	AC_PATH_PROG(JAVA_CONFIG, java-config, "no")
