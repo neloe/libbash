@@ -17,8 +17,10 @@
 ##############################################
 
 AC_INIT([libbash], [0.1],[powerofazure@gmail.com])
+AM_INIT_AUTOMAKE
 AC_PREREQ([2.65])
 AC_PROG_CXX
+AC_PROG_RANLIB
 AC_PATH_PROG([JAVA],[java],"no")
 if test "$JAVA" = "no"; then
 	AC_MSG_ERROR([No java executable found])

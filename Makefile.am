@@ -15,22 +15,14 @@
 #You should have received a copy of the GNU General Public License
 #along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################
-# Makefile.in for libbash
+# Makefile.am for libbash
 # Author: Nathan Eloe
-#
-
-GRAMMAR_SRC=bashast.g
-GRAMMAR_INCLUDES=bashastLexer.h bashastParser.h
-
+###############################################
 grammar.run: bashast.g
 	@JAVA@ -classpath @antlr_cp@ -Xmx512m org.antlr.Tool -Xconversiontimeout 20000 $<
 	touch $@
 
-$(GRAMMAR_INCLUDES): grammar.run
-
-#Do not rename these, the grammar name and file name must match
 bashast.g: bashast/bashast.g
 	sed -e 's/CommonTree/pANTLR3_BASE_TREE/g' -e 's/Java/C/g' $< > $@
 
-clean:
-	rm *.h *.c *.g *.run 2> /dev/null
+
