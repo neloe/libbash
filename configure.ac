@@ -17,7 +17,7 @@
 ##############################################
 
 AC_INIT([libbash], [0.1],[powerofazure@gmail.com])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([parallel-tests])
 AC_PREREQ([2.65])
 AC_PROG_CXX
 AC_PROG_RANLIB

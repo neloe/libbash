@@ -18,6 +18,8 @@
 # Makefile.am for libbash
 # Author: Nathan Eloe
 ###############################################
+TESTS = bashast/gunit/runtests.sh
+SH_LOG_COMPILER = /bin/bash
 grammar.run: bashast.g
 	@JAVA@ -classpath @antlr_cp@ -Xmx1024m org.antlr.Tool -Xconversiontimeout 20000 $<
 	touch $@
