@@ -18,6 +18,8 @@
 # Makefile.am for libbash
 # Author: Nathan Eloe
 ###############################################
+include doxygen.am
+
 TESTS = bashast/gunit/runtests.sh
 SH_LOG_COMPILER = /bin/bash
 

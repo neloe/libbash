@@ -42,4 +42,13 @@ if test "$PDFLATEX" = "no"; then
 fi
 AC_CHECK_LIB([antlr3c],[antlr3AsciiFileStreamNew],[],[AC_MSG_ERROR(libasntlr3c not found.  Have you installed the C antlr runtime?)])
 AC_CONFIG_FILES([Makefile])
+DX_HTML_FEATURE(ON)
+DX_MAN_FEATURE(OFF)
+DX_CHM_FEATURE(OFF)
+DX_CHI_FEATURE(OFF)
+DX_RTF_FEATURE(OFF)
+DX_XML_FEATURE(OFF)
+DX_PDF_FEATURE(OFF)
+DX_PS_FEATURE(OFF)
+DX_INIT_DOXYGEN([$PACKAGE_NAME], [Doxyfile])
 AC_OUTPUT
