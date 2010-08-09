@@ -22,9 +22,9 @@ let failedtests=0
 #test running function
 function rtest {
 	freason=""
-	gramname=`cat $SCRIPTDIR/$1 |grep gunit|awk '{print $2}'|awk -F';' '{print $1}'`
+	gramname=`cat $1 |grep gunit|awk '{print $2}'|awk -F';' '{print $1}'`
 	grammar="$gramname.g"
-	if [[ ! -a "$grammar" ]]; then
+	if [[ ! -a "$SCRIPTDIR/$grammar" ]]; then
 		cp "$SCRIPTDIR/../$grammar" $SCRIPTDIR
 	fi
 	if [[ ! -a "$SCRIPTDIR/${gramname}Lexer.java" && ! -a "$SCRIPTDIR/${gramname}Parser.java" ]]; then
@@ -39,7 +39,7 @@ function rtest {
 			freason="Compilation failure"
 		fi
 	fi
-	java org.antlr.gunit.Interp $SCRIPTDIR/$1 > $1.output
+	java org.antlr.gunit.Interp $1 > $1.output
 	failed=`cat $1.output|grep "Failures:"|awk -F: '{print $3}'|awk '{print $1}'`
 
 	if [[ $freason == "" && failed -ne '0' ]]; then
@@ -65,7 +65,7 @@ fi
 
 if [[ $# -eq 0  ]]; then
 	for gtest in `ls ${SCRIPTDIR}|grep gunit`; do
-		rtest $gtest
+		rtest ${SCRIPTDIR}/$gtest
 	done
 else
 	for gtest in "$@"; do
