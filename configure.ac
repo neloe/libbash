@@ -36,6 +36,10 @@ else
 	AC_CHECK_FILE(["$with_antlr"],[],[AC_MSG_ERROR(Antlr jar $with_antlr not found)])
 	AC_SUBST(antlr_cp,["$with_antlr"])
 fi
+AC_PATH_PROG([PDFLATEX],[pdflatex],"no")
+if test "$PDFLATEX" = "no"; then
+	AC_MSG_RESULT([pdflatex not found on your system. You will be unable to generate the coding standard])
+fi
 AC_CHECK_LIB([antlr3c],[antlr3AsciiFileStreamNew],[],[AC_MSG_ERROR(libasntlr3c not found.  Have you installed the C antlr runtime?)])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -20,6 +20,10 @@
 ###############################################
 TESTS = bashast/gunit/runtests.sh
 SH_LOG_COMPILER = /bin/bash
+
+coding_standard.pdf: coding_standard/coding_standard.tex
+	@PDFLATEX@ coding_standard/coding_standard.tex 2&>1 > /dev/null
+
 grammar.run: bashast.g
 	@JAVA@ -classpath @antlr_cp@ -Xmx1024m org.antlr.Tool -Xconversiontimeout 20000 $<
 	touch $@
