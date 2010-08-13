@@ -19,7 +19,7 @@
 # Author: Nathan Eloe
 ###############################################
 grammar.run: bashast.g
-	@JAVA@ -classpath @antlr_cp@ -Xmx512m org.antlr.Tool -Xconversiontimeout 20000 $<
+	@JAVA@ -classpath @antlr_cp@ -Xmx1024m org.antlr.Tool -Xconversiontimeout 20000 $<
 	touch $@
 
 bashast.g: bashast/bashast.g
