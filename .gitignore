@@ -1,3 +1,12 @@
+.*.swp
+*/*/*.swp
+Makefile.in
+test-suite.log
+aclocal.m4
+*/*/*.log
+depcomp
+install-sh
+missing
 Makefile
 autom4te.cache
 bashast.g
