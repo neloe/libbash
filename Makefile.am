@@ -34,6 +34,8 @@ builtin_unittests_SOURCES += src/builtins/tests/echo_tests.cpp
 builtin_unittests_LDADD = ${GTEST_LIBS} libcppbash.la
 endif
 
+AM_CXXFLAGS=-std=c++0x
+
 lib_LTLIBRARIES = libcppbash.la
 libcppbash_la_SOURCES = src/cppbash_builtin.cpp
 libcppbash_la_SOURCES += src/builtins/echo_builtin.cpp

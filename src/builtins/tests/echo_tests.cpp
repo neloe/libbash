@@ -27,147 +27,29 @@ along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 #include <gtest/gtest.h>
 
 using namespace std;
-TEST(echo_builtin_test, simple_output)
+
+static void test_echo(const string& expected, std::initializer_list<string> args)
 {
-	vector<string> args;
-	args.push_back("hello");
-	args.push_back("world");
 	stringstream test_output;
 	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("hello world\n", test_output.str());
-}
-TEST(echo_builtin_test, suppress_newline)
-{
-	vector<string> args;
-	args.push_back("-n");
-	args.push_back("foo");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("foo",test_output.str());
-}
-TEST(echo_builtin_test, enable_escape)
-{
-	vector<string> args;
-	args.push_back("-e");
-	args.push_back("foo\\t");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("foo\t\n",test_output.str());
-}
-TEST(echo_builtin_test, no_escape)
-{
-	vector<string> args;
-	args.push_back("foo\\t");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("foo\\t\n",test_output.str());
-}
-TEST(echo_builtin_test, only_options)
-{
-	vector<string> args;
-	args.push_back("-n");
-	args.push_back("foo");
-	args.push_back("-e");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("foo -e",test_output.str());
-}
-TEST(echo_builtin_test, only_options2)
-{
-	vector<string> args;
-	args.push_back("foo");
-	args.push_back("-n");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("foo -n\n",test_output.str());
-}
-TEST(echo_builtin_test, combined_options)
-{
-	vector<string> args;
-	args.push_back("-ne");
-	args.push_back("fo\\to");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("fo\to",test_output.str());
-}
-TEST(echo_builtin_test, combined_options2)
-{
-	vector<string> args;
-	args.push_back("-enE");
-	args.push_back("fo\\to");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("fo\\to",test_output.str());
-}
-TEST(echo_builtin_test, fake_options)
-{
-	vector<string> args;
-	args.push_back("-nea");
-	args.push_back("fo\\to");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("-nea fo\\to\n",test_output.str());
-}
-TEST(echo_builtin_test, combined_options_alternating_e)
-{
-	vector<string> args;
-	args.push_back("-enEeEe");
-	args.push_back("fo\\to");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("fo\to",test_output.str());
-}
-TEST(echo_builtin_test, coflicting_options)
-{
-	vector<string> args;
-	args.push_back("-e");
-	args.push_back("-E");
-	args.push_back("fo\\to");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("fo\\to\n",test_output.str());
-}
-TEST(echo_builtin_test, coflicting_options2)
-{
-	vector<string> args;
-	args.push_back("-e");
-	args.push_back("-E");
-	args.push_back("-e");
-	args.push_back("fo\\to");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("fo\to\n",test_output.str());
-}
-TEST(echo_builtin_test, oct_escape)
-{
-	vector<string>args;
-	args.push_back("-e");
-	args.push_back("\\0135");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("]\n", test_output.str());
-}
-TEST(echo_builtin_test, hex_escape)
-{
-	vector<string>args;
-	args.push_back("-e");
-	args.push_back("\\x57");
-	stringstream test_output;
-	echo_builtin my_echo(test_output,cerr,cin);
-	my_echo.exec(args);
-	ASSERT_EQ("W\n", test_output.str());
+	my_echo.exec(vector<string>(args));
+	ASSERT_EQ(expected, test_output.str());
 }
 
+#define TEST_ECHO(name, expected, ...) \
+	TEST(echo_builtin_test, name) { test_echo(expected, {__VA_ARGS__}); }
+
+TEST_ECHO(simple_output,                  "hello world\n", "hello", "world")
+TEST_ECHO(suppress_newline,               "foo",           "-n", "foo")
+TEST_ECHO(enable_escape,                  "foo\t\n",       "-e", "foo\\t")
+TEST_ECHO(no_escape,                      "foo\\t\n",      "foo\\t")
+TEST_ECHO(only_options,                   "foo -e",        "-n", "foo", "-e")
+TEST_ECHO(only_options2,                  "foo -n\n",      "foo", "-n")
+TEST_ECHO(combined_options,               "fo\to",         "-ne", "fo\\to")
+TEST_ECHO(combined_options2,              "fo\\to",        "-enE", "fo\\to")
+TEST_ECHO(fake_options,                   "-nea fo\\to\n", "-nea", "fo\\to")
+TEST_ECHO(combined_options_alternating_e, "fo\to",         "-enEeEe", "fo\\to")
+TEST_ECHO(conflicting_options,            "fo\\to\n",      "-e", "-E", "fo\\to")
+TEST_ECHO(conflicting_options2,           "fo\to\n",       "-e", "-E", "-e", "fo\\to")
+TEST_ECHO(oct_escape,                     "]\n",           "-e", "\\0135")
+TEST_ECHO(hex_escape,                     "W\n",           "-e", "\\x57")
