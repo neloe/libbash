@@ -1,19 +1,19 @@
 /*
-Copyright 2010 Nathan Eloe
+   Copyright 2010 Nathan Eloe
 
-This file is part of libbash.
+   This file is part of libbash.
 
-libbash is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 2 of the License, or
-(at your option) any later version.
+   libbash is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 2 of the License, or
+   (at your option) any later version.
 
-libbash is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+   libbash is distributed in the hope that it will be useful,but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with libbash.  If not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU General Public License
+   along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 */
 ///
 /// \file echo_builtin.cpp
@@ -30,17 +30,17 @@ echo_builtin::echo_builtin(std::ostream &outstream, std::ostream &errstream, std
 int echo_builtin::exec(std::vector<std::string> bash_args)
 {
   //figure out just what the options are
-	bool suppress_nl;
-	bool escapes_enabled;
-	determine_options(bash_args, suppress_nl, escapes_enabled);
+  bool suppress_nl;
+  bool escapes_enabled;
+  determine_options(bash_args, suppress_nl, escapes_enabled);
   if (escapes_enabled)
   {
-		suppress_nl = (suppress_nl || newline_suppressed(bash_args));
+    suppress_nl = (suppress_nl || newline_suppressed(bash_args));
     replace_escapes(bash_args);
   }
-	std::copy(bash_args.begin(), bash_args.end()-1, std::ostream_iterator<std::string>(this->out_buffer()," "));
-	this->out_buffer() << *(bash_args.end()-1);
-	if (!suppress_nl)
+  std::copy(bash_args.begin(), bash_args.end()-1, std::ostream_iterator<std::string>(this->out_buffer()," "));
+  this->out_buffer() << *(bash_args.end()-1);
+  if (!suppress_nl)
   {
     this->out_buffer() << std::endl;
   }
@@ -49,61 +49,61 @@ int echo_builtin::exec(std::vector<std::string> bash_args)
 
 void echo_builtin::determine_options(std::vector<std::string> &args, bool &suppress_nl, bool &enable_escapes)
 {
-	enable_escapes=false;
-	suppress_nl=false;
-	bool sup_nl=false;
-	bool en_esc=false;
-	bool real_opts;
-	for (int i=0; i<args.size(); i++)
-	{
-		if (*(args[i].begin()) == '-')
-		{
-			real_opts=true;
-			for (std::string::iterator j = args[i].begin()+1; j != args[i].end(); j++)
-			{
-				if (*j=='n')
-				{
-					sup_nl=true;
-				}
-				else if (*j=='e')
-				{
-					en_esc=true;
-				}
-				else if (*j=='E')
-				{
-					en_esc=false;
-				}
-				else
-				{
-					real_opts=false;
-				}
-			}
-			if (real_opts)
-			{
-				args.erase(args.begin()+i);
-				i--;
-				suppress_nl=sup_nl;
-				enable_escapes=en_esc;
-			}
-		}
-		else
-		{
-			i=args.size();
-		}
-	}
+  enable_escapes=false;
+  suppress_nl=false;
+  bool sup_nl=false;
+  bool en_esc=false;
+  bool real_opts;
+  for (int i=0; i<args.size(); i++)
+  {
+    if (*(args[i].begin()) == '-')
+    {
+      real_opts=true;
+      for (std::string::iterator j = args[i].begin()+1; j != args[i].end(); j++)
+      {
+        if (*j=='n')
+        {
+          sup_nl=true;
+        }
+        else if (*j=='e')
+        {
+          en_esc=true;
+        }
+        else if (*j=='E')
+        {
+          en_esc=false;
+        }
+        else
+        {
+          real_opts=false;
+        }
+      }
+      if (real_opts)
+      {
+        args.erase(args.begin()+i);
+        i--;
+        suppress_nl=sup_nl;
+        enable_escapes=en_esc;
+      }
+    }
+    else
+    {
+      i=args.size();
+    }
+  }
 }
 
 bool echo_builtin::newline_suppressed(std::vector<std::string> &args)
 {
   bool suppressed = false;
-	for (int i = 0; i < args.size(); i++)
-	{
-		while (args[i].find("\\c")!=std::string::npos)
-		{
-			suppressed = true;
-			replace_all(args[i], "\\c", "");
-		}
-	}
+  for (int i = 0; i < args.size(); i++)
+  {
+    while (args[i].find("\\c")!=std::string::npos)
+    {
+      suppressed = true;
+      replace_all(args[i], "\\c", "");
+    }
+  }
   return suppressed;
 }
 
