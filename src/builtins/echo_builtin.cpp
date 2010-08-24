@@ -54,12 +54,12 @@ void echo_builtin::determine_options(std::vector<std::string> &args, bool &suppr
   bool sup_nl=false;
   bool en_esc=false;
   bool real_opts;
-  for (int i=0; i<args.size(); i++)
+  for (auto i=args.begin(); i != args.end(); i++)
   {
-    if (*(args[i].begin()) == '-')
+    if (*(i->begin()) == '-')
     {
       real_opts=true;
-      for (std::string::iterator j = args[i].begin()+1; j != args[i].end(); j++)
+      for (std::string::iterator j = i->begin()+1; j != i->end(); j++)
       {
         if (*j=='n')
         {
@@ -80,7 +80,7 @@ void echo_builtin::determine_options(std::vector<std::string> &args, bool &suppr
       }
       if (real_opts)
       {
-        args.erase(args.begin()+i);
+        args.erase(i);
         i--;
         suppress_nl=sup_nl;
         enable_escapes=en_esc;
@@ -88,7 +88,7 @@ void echo_builtin::determine_options(std::vector<std::string> &args, bool &suppr
     }
     else
     {
-      i=args.size();
+      return;
     }
   }
 }
@@ -96,12 +96,12 @@ void echo_builtin::determine_options(std::vector<std::string> &args, bool &suppr
 bool echo_builtin::newline_suppressed(std::vector<std::string> &args)
 {
   bool suppressed = false;
-  for (int i = 0; i < args.size(); i++)
+  for (auto i = args.begin(); i != args.end(); i++)
   {
-    while (args[i].find("\\c")!=std::string::npos)
+    while (i->find("\\c")!=std::string::npos)
     {
       suppressed = true;
-      replace_all(args[i], "\\c", "");
+      replace_all(*i, "\\c", "");
     }
   }
   return suppressed;
@@ -109,18 +109,18 @@ bool echo_builtin::newline_suppressed(std::vector<std::string> &args)
 
 void echo_builtin::replace_escapes(std::vector<std::string> &args)
 {
-  for (int i = 0; i<args.size(); i++)
+  for (auto i = args.begin(); i != args.end(); i++)
   {
-    replace_all(args[i],"\\a","\a");
-    replace_all(args[i],"\\b","\b");
-    replace_all(args[i],"\\e","\e");
-    replace_all(args[i],"\\f","\f");
-    replace_all(args[i],"\\n","\n");
-    replace_all(args[i],"\\r","\r");
-    replace_all(args[i],"\\t","\t");
-    replace_all(args[i],"\\v","\v");
-    replace_all(args[i],"\\\\","\\");
-    replace_numeric_escapes(args[i]);
+    replace_all(*i,"\\a","\a");
+    replace_all(*i,"\\b","\b");
+    replace_all(*i,"\\e","\e");
+    replace_all(*i,"\\f","\f");
+    replace_all(*i,"\\n","\n");
+    replace_all(*i,"\\r","\r");
+    replace_all(*i,"\\t","\t");
+    replace_all(*i,"\\v","\v");
+    replace_all(*i,"\\\\","\\");
+    replace_numeric_escapes(*i);
   }
 }
 
