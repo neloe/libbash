@@ -39,6 +39,7 @@ AM_CXXFLAGS=-std=c++0x
 lib_LTLIBRARIES = libcppbash.la
 libcppbash_la_SOURCES = src/cppbash_builtin.cpp
 libcppbash_la_SOURCES += src/builtins/echo_builtin.cpp
+libcppbash_la_CPPFLAGS = $(BOOST_CPPFLAGS)
 
 coding_standard.pdf: coding_standard/coding_standard.tex
 	@PDFLATEX@ coding_standard/coding_standard.tex 2&>1 > /dev/null
