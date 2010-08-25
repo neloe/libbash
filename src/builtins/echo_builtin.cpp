@@ -22,150 +22,118 @@
 ///
 
 #include "echo_builtin.h"
+#include <boost/spirit/include/karma.hpp>
+#include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/phoenix.hpp>
+
+
+namespace qi = boost::spirit::qi;
+namespace karma = boost::spirit::karma;
+namespace phoenix = boost::phoenix;
 
 echo_builtin::echo_builtin(std::ostream &outstream, std::ostream &errstream, std::istream&instream) : cppbash_builtin(outstream, errstream, instream)
 {
 }
 
-int echo_builtin::exec(std::vector<std::string> bash_args)
+int echo_builtin::exec(const std::vector<std::string>& bash_args)
 {
-  //figure out just what the options are
-  bool suppress_nl;
-  bool escapes_enabled;
-  determine_options(bash_args, suppress_nl, escapes_enabled);
-  if (escapes_enabled)
+  bool suppress_nl = false;
+  bool enable_escapes = false;
+  bool options_parsed = false;
+
+  for(auto i = bash_args.begin(); i != bash_args.end(); i++)
   {
-    suppress_nl = (suppress_nl || newline_suppressed(bash_args));
-    replace_escapes(bash_args);
+    const std::string& str = *i;
+
+    if(!options_parsed)
+    {
+      options_parsed = determine_options(str, suppress_nl, enable_escapes);
+    }
+
+    if(options_parsed)
+    {
+      if(enable_escapes)
+      {
+        for(; i != bash_args.end(); i++)
+        {
+          transform_escapes(*i);
+        }
+      }
+      else
+      {
+        this->out_buffer() << karma::format(karma::string % ' ', std::vector<std::string>(i, bash_args.end()));
+      }
+
+      if(!suppress_nl)
+        this->out_buffer() << std::endl;
+
+      return 0;
+    }
   }
-  std::copy(bash_args.begin(), bash_args.end()-1, std::ostream_iterator<std::string>(this->out_buffer()," "));
-  this->out_buffer() << *(bash_args.end()-1);
-  if (!suppress_nl)
-  {
-    this->out_buffer() << std::endl;
-  }
+
   return 0;
 }
 
-void echo_builtin::determine_options(std::vector<std::string> &args, bool &suppress_nl, bool &enable_escapes)
+bool echo_builtin::determine_options(const std::string &string, bool &suppress_nl, bool &enable_escapes)
 {
-  enable_escapes=false;
-  suppress_nl=false;
-  bool sup_nl=false;
-  bool en_esc=false;
-  bool real_opts;
-  for (auto i=args.begin(); i != args.end(); i++)
+  using phoenix::ref;
+  using qi::char_;
+
+  bool n_matched = false, e_matched = false, E_matched = false;
+
+  auto options = '-' >
+    +(
+      char_('n')[ref(n_matched) = true] |
+      char_('e')[ref(e_matched) = true, ref(E_matched) = false] |
+      char_('E')[ref(E_matched) = true, ref(e_matched) = false]
+    );
+
+  auto first = string.begin();
+  qi::parse(first, string.end(), options);
+
+  if(first != string.end()) {
+    return true;
+  }
+  else
   {
-    if (*(i->begin()) == '-')
-    {
-      real_opts=true;
-      for (std::string::iterator j = i->begin()+1; j != i->end(); j++)
-      {
-        if (*j=='n')
-        {
-          sup_nl=true;
-        }
-        else if (*j=='e')
-        {
-          en_esc=true;
-        }
-        else if (*j=='E')
-        {
-          en_esc=false;
-        }
-        else
-        {
-          real_opts=false;
-        }
-      }
-      if (real_opts)
-      {
-        args.erase(i);
-        i--;
-        suppress_nl=sup_nl;
-        enable_escapes=en_esc;
-      }
-    }
-    else
-    {
-      return;
-    }
+    if(n_matched)
+      suppress_nl = true;
+
+    if(e_matched)
+      enable_escapes = true;
+
+    if(E_matched)
+      enable_escapes = false;
+
+    return false;
   }
 }
 
-bool echo_builtin::newline_suppressed(std::vector<std::string> &args)
+void echo_builtin::transform_escapes(const std::string &string)
 {
-  bool suppressed = false;
-  for (auto i = args.begin(); i != args.end(); i++)
-  {
-    while (i->find("\\c")!=std::string::npos)
-    {
-      suppressed = true;
-      replace_all(*i, "\\c", "");
-    }
-  }
-  return suppressed;
-}
+  using phoenix::val;
+  using qi::lit;
 
-void echo_builtin::replace_escapes(std::vector<std::string> &args)
-{
-  for (auto i = args.begin(); i != args.end(); i++)
-  {
-    replace_all(*i,"\\a","\a");
-    replace_all(*i,"\\b","\b");
-    replace_all(*i,"\\e","\e");
-    replace_all(*i,"\\f","\f");
-    replace_all(*i,"\\n","\n");
-    replace_all(*i,"\\r","\r");
-    replace_all(*i,"\\t","\t");
-    replace_all(*i,"\\v","\v");
-    replace_all(*i,"\\\\","\\");
-    replace_numeric_escapes(*i);
-  }
-}
+  auto escape_parser =
+  +(
+    lit('\\') >>
+    (
+     lit('a')[this->out_buffer() << val("\a")] |
+     lit('b')[this->out_buffer() << val("\b")] |
+     lit('e')[this->out_buffer() << val("\e")] |
+     lit('f')[this->out_buffer() << val("\f")] |
+     lit('n')[this->out_buffer() << val("\n")] |
+     lit('r')[this->out_buffer() << val("\r")] |
+     lit('t')[this->out_buffer() << val("\t")] |
+     lit('v')[this->out_buffer() << val("\v")] |
+     lit('\\')[this->out_buffer() << val('\\')] |
+     lit("0") >> qi::uint_parser<unsigned, 8, 1, 3>()[ this->out_buffer() << phoenix::static_cast_<char>(qi::_1)] |
+     lit("x") >> qi::uint_parser<unsigned, 16, 1, 2>()[ this->out_buffer() << phoenix::static_cast_<char>(qi::_1)]
 
-void echo_builtin::replace_all(std::string &word, const std::string &to_rep, const std::string &rep)
-{
-  while (word.find(to_rep) != std::string::npos)
-  {
-    word.replace(word.find(to_rep),to_rep.size(),rep);
-  }
-}
+    ) |
+    qi::char_[this->out_buffer() << qi::_1]
+  );
 
-void echo_builtin::replace_numeric_escapes(std::string &word)
-{
-  //start with octals
-  std::string octal_dig = "12345670";
-  std::string hex_dig = "123456789aAbBcCdDeEfF0";
-  while (word.find("\\0")!=std::string::npos)
-  {
-    std::string octal_num;
-    for (int i = 2; i <= 4; i++)
-    {
-      if(octal_dig.find(word[word.find("\\0") + i]) != std::string::npos)
-      {
-        octal_num += word[word.find("\\0")+i];
-      }
-    }
-    int a=std::strtol(octal_num.c_str(),NULL,8);
-    std::string replace_str;
-    replace_str += (char)a;
-    word.replace(word.find("\\0"),2 + octal_num.size(), replace_str);
-  }
-  //move on up to the hex numbers
-  while (word.find("\\x")!=std::string::npos)
-  {
-    std::string hex_num;
-    for (int i = 2; i <= 3; i++)
-    {
-      if(hex_dig.find(word[word.find("\\x")+i]) != std::string::npos)
-      {
-        hex_num += word[word.find("\\x")+i];
-      }
-    }
-    int a=std::strtol(hex_num.c_str(),NULL,16);
-    std::string replace_str;
-    replace_str += (char)a;
-    word.replace(word.find("\\x"),2+hex_num.size(), replace_str);
-  }
+  auto begin = string.begin();
+  qi::parse(begin, string.end(), escape_parser);
 }

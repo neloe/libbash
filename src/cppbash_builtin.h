@@ -47,7 +47,7 @@ class cppbash_builtin
     /// \param bash_args arguments passed to the builtin
     /// \return return status of the command
     ///
-    virtual int exec(std::vector<std::string> bash_args)=0;
+    virtual int exec(const std::vector<std::string>& bash_args)=0;
     ///
     /// \brief accessor to the std output stream
     /// \return output buffer for the builtin

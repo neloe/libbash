@@ -47,37 +47,18 @@ class echo_builtin: public virtual cppbash_builtin
     /// \param bash_args the arguments to the echo builtin
     /// \return exit status of echo
     ///
-    virtual int exec(std::vector<std::string> bash_args);
+    virtual int exec(const std::vector<std::string>& bash_args);
   private:
     ///
     /// \brief determines the options passed as arguments
-    /// \param args list of arguments passed to echo
+    /// \param string string to check for arguments
     /// \param suppress_nl returns back whether to suppress newlines
     /// \param enable_escapes returns back whether to enable escapes
-    void determine_options(std::vector<std::string> &args, bool &suppress_nl, bool &enable_escapes);
-    ///
-    /// \brief checks to see if the trailing newline is suppressed
-    /// \param args arguments to check, removes suppressing escape sequences
-    /// \return true if newlines are suppressed, false otherwise
-    ///
-    bool newline_suppressed(std::vector<std::string> &args);
-    ///
-    /// \brief replaces all escape seqs in std::string with actual escape seq.
-    /// \param args list of arguments to replace escape sequences in
-    ///
-    void replace_escapes(std::vector<std::string> &args);
-    ///
-    /// \brief replaces all instances of to_rep with rep
-    /// \param word word to replace instances in
-    /// \param to_rep the pattern to replace in the std::string
-    /// \param rep what to replace to_rep with
-    ///
-    void replace_all(std::string &word, const std::string &to_rep, const std::string &rep);
-    ///
-    /// \brief replaces octal and hex escapes with escape sequences
-    /// \param word std::string to replace numeric escapes in
-    ///
-    void replace_numeric_escapes(std::string &word);
+    /// \return false if all options have been processed
+    bool determine_options(const std::string &string, bool &suppress_nl, bool &enable_escapes);
+
+    /// \brief transforms escapes in echo input
+    void transform_escapes(const std::string &string);
 };
 
 #endif
