@@ -31,6 +31,10 @@ namespace qi = boost::spirit::qi;
 namespace karma = boost::spirit::karma;
 namespace phoenix = boost::phoenix;
 
+class suppress_output
+{
+};
+
 echo_builtin::echo_builtin(std::ostream &outstream, std::ostream &errstream, std::istream&instream) : cppbash_builtin(outstream, errstream, instream)
 {
 }
@@ -56,7 +60,14 @@ int echo_builtin::exec(const std::vector<std::string>& bash_args)
       {
         for(; i != bash_args.end(); i++)
         {
-          transform_escapes(*i);
+          try
+          {
+            transform_escapes(*i);
+          }
+          catch(suppress_output)
+          {
+            return 0;
+          }
         }
       }
       else
@@ -126,6 +137,7 @@ void echo_builtin::transform_escapes(const std::string &string)
      lit('r')[this->out_buffer() << val("\r")] |
      lit('t')[this->out_buffer() << val("\t")] |
      lit('v')[this->out_buffer() << val("\v")] |
+     lit('c')[phoenix::throw_(suppress_output())] |
      lit('\\')[this->out_buffer() << val('\\')] |
      lit("0") >> qi::uint_parser<unsigned, 8, 1, 3>()[ this->out_buffer() << phoenix::static_cast_<char>(qi::_1)] |
      lit("x") >> qi::uint_parser<unsigned, 16, 1, 2>()[ this->out_buffer() << phoenix::static_cast_<char>(qi::_1)]

@@ -58,6 +58,7 @@ class echo_builtin: public virtual cppbash_builtin
     bool determine_options(const std::string &string, bool &suppress_nl, bool &enable_escapes);
 
     /// \brief transforms escapes in echo input
+    /// \return false when further output should be suppressed
     void transform_escapes(const std::string &string);
 };
 
