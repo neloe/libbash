@@ -28,8 +28,13 @@ coding_standard/: LaTeX coding standard for the project
 docs/: output folder for Doxygen generated documentation
 
 Build Instructions:
-To generate the configure script, run autoreconf from this directory
-Run automake --add-missing to generate missing required files for autotools
+
+./autogen.sh
+
+This will run ./configure for you so you are ready to build the thing.
+Now you can run make check to build the library and run tests. Other
+available targets:
+
 To build ANTLR C runtime libraries from grammar:
 	make grammar.run
 To generate the coding standard from the latex file (with pdflatex):
