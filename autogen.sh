@@ -1,2 +1,2 @@
 #!/bin/sh
-autoreconf -i && ./configure --enable-gtest
+autoreconf -W all -i && ./configure --enable-gtest
