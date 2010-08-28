@@ -16,10 +16,10 @@
 #along with libbash.  If not, see <http://www.gnu.org/licenses/>.
 ##############################################
 
+AC_PREREQ([2.65])
 AC_CONFIG_MACRO_DIR([m4])
 AC_INIT([libbash], [0.1],[powerofazure@gmail.com])
 AM_INIT_AUTOMAKE([parallel-tests subdir-objects])
-AC_PREREQ([2.65])
 AC_PROG_CXX
 LT_INIT
 AC_PROG_LIBTOOL
