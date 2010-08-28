@@ -19,7 +19,7 @@ dnl #############################################
 AC_PREREQ(2.65)
 AC_CONFIG_MACRO_DIR([m4])
 AC_INIT([libbash],[0.1],[powerofazure@gmail.com])
-AM_INIT_AUTOMAKE([parallel-tests subdir-objects])
+AM_INIT_AUTOMAKE([foreign parallel-tests subdir-objects])
 AC_PROG_CXX
 LT_INIT
 AX_BOOST_BASE
