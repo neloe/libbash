@@ -36,8 +36,14 @@ endif
 
 AM_CXXFLAGS=-std=c++0x
 
+var_ref_PROGRAMS = var_ref
+var_refdir = src/examples
+var_ref_SOURCES = src/examples/var_ref.cpp
+var_ref_CXXFLAGS=-lantlr3c
+var_ref_LDADD = libcppbash.la
+
 lib_LTLIBRARIES = libcppbash.la
-libcppbash_la_SOURCES = src/cppbash_builtin.cpp
+libcppbash_la_SOURCES = src/cppbash.cpp src/cppbash_builtin.cpp
 libcppbash_la_SOURCES += src/builtins/echo_builtin.cpp
 libcppbash_la_CPPFLAGS = $(BOOST_CPPFLAGS)
 
