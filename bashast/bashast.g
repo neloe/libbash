@@ -361,7 +361,7 @@ ns_str_part
 //Parts of strings, no slashes, no reserved words
 ns_str_part_no_res
 	:	num
-	|	name|NQSTR|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|TILDE|INC|DEC|ARITH_ASSIGN|ESC_CHAR|CARET;
+	|	name|EVERYTHING_ELSE|ALPHANUM|EQUALS|PCT|PCTPCT|MINUS|DOT|DOTDOT|COLON|BOP|UOP|TEST|'_'|TILDE|INC|DEC|ARITH_ASSIGN|ESC_CHAR|CARET;
 //strings with no slashes, used in certain variable expansions
 ns_str	:	ns_str_part* -> ^(STRING ns_str_part*);
 //Allowable parts of double quoted strings
@@ -433,7 +433,7 @@ pattern_class_match
 	|	LSQUARE DOT NAME DOT RSQUARE -> ^(COLLATING_SYMBOL NAME);
 //Characters allowed in matching equivalence classes
 pattern_char
-	:	LETTER|DIGIT|NQCHAR_NO_ALPHANUM|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|DOT|LT|GT|SQUOTE|QUOTE;
+	:	LETTER|DIGIT|EVERYTHING_ELSE|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|DOT|LT|GT|SQUOTE|QUOTE;
 //extended pattern matching
 extended_pattern_match
 	:	QMARK LPAREN fname (PIPE fname)* RPAREN -> ^(MATCH_AT_MOST_ONE fname+)
@@ -612,6 +612,6 @@ ESC_GT	:	'\\''>';
 //Handle ANSI C escaped characters: escaped octal, escaped hex, escaped ctrl+ chars, then all others
 ESC_CHAR:	'\\' (('0'..'7')('0'..'7')('0'..'7')?|'x'('0'..'9'|'a'..'f'|'A'..'F')('0'..'9'|'a'..'f'|'A'..'F')?|'c'.|.);
 NAME	:	(LETTER|'_')(ALPHANUM|'_')+;
-NQCHAR_NO_ALPHANUM
-	:	~('\n'|'\r'|' '|'\t'|'\\'|CARET|QMARK|COLON|AT|SEMIC|POUND|SLASH|BANG|TIMES|COMMA|PIPE|AMP|MINUS|PLUS|PCT|EQUALS|LSQUARE|RSQUARE|RPAREN|LPAREN|RBRACE|LBRACE|DOLLAR|TICK|DOT|LT|GT|SQUOTE|QUOTE|'a'..'z'|'A'..'Z'|'0'..'9')+;
-NQSTR	:	(NQCHAR_NO_ALPHANUM|ALPHANUM)+;
+EVERYTHING_ELSE
+	: ('\u0000'..'\b'|'\u000B'..'\f'|'\u000E'..'\u001F'|'_'|'~'.    .'\uFFFF');
+//NQSTR	:	(NQCHAR_NO_ALPHANUM|ALPHANUM)+;

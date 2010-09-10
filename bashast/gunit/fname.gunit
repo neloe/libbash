@@ -3,7 +3,7 @@ gunit bashast;
 fname:
 "+%Y%m%d" -> (STRING + % Y % m % d)
 "\"http://www.gnu.org/software/autoconf/autoconf.html\"" -> (STRING (DOUBLE_QUOTED_STRING http : / / www . gnu . org / software / autoconf / autoconf . html))
-"\"http://dev.gentoo.org/~mpagano/genpatches\"" -> (STRING (DOUBLE_QUOTED_STRING http : / / dev . gentoo . org / ~mpagano / genpatches))
+"\"http://dev.gentoo.org/~mpagano/genpatches\"" -> (STRING (DOUBLE_QUOTED_STRING http : / / dev . gentoo . org / ~ mpagano / genpatches))
 "\"\"" -> (STRING DOUBLE_QUOTED_STRING)
 "\"For more info on this patchset, and how to report problems, see:\"" -> (STRING (DOUBLE_QUOTED_STRING For   more   info   on   this   patchset ,   and   how   to   report   problems ,   see :))
 "\"asdf;!\"" -> (STRING (DOUBLE_QUOTED_STRING asdf ; !))
