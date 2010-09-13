@@ -31,9 +31,9 @@ fname:
 "tab\\ttab" -> "(STRING tab \\\t tab)"
 "abc[def]" -> (STRING abc (MATCH_PATTERN def))
 "a[]" -> (STRING a [ ])
-"ab[d-h]" -> (STRING ab (MATCH_PATTERN d -h))
-"ab[!d-h]" -> (STRING ab (MATCH_ANY_EXCEPT d -h))
-"ab[^d-h]" -> (STRING ab (MATCH_ANY_EXCEPT d -h))
+"ab[d-h]" -> (STRING ab (MATCH_PATTERN d - h))
+"ab[!d-h]" -> (STRING ab (MATCH_ANY_EXCEPT d - h))
+"ab[^d-h]" -> (STRING ab (MATCH_ANY_EXCEPT d - h))
 "ab[]c]" -> (STRING ab (MATCH_PATTERN ] c))
 "ab[:alpha:]" -> (STRING ab (MATCH_PATTERN : alpha :))
 "ab[=c=]" -> (STRING ab (MATCH_PATTERN = c =))
