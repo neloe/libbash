@@ -28,7 +28,7 @@ function rtest {
 		cp "$SCRIPTDIR/../$grammar" $SCRIPTDIR
 	fi
 	if [[ ! -a "$SCRIPTDIR/${gramname}Lexer.java" && ! -a "$SCRIPTDIR/${gramname}Parser.java" ]]; then
-		java -Xmx1024m org.antlr.Tool -Xconversiontimeout 20000 $SCRIPTDIR/$grammar
+		java org.antlr.Tool $SCRIPTDIR/$grammar
 		if [[ ! -a "$SCRIPTDIR/${gramname}Lexer.java" && ! -a "$SCRIPTDIR/${gramname}Parser.java" ]]; then
 			freason="Grammar generation failure"
 		fi
